@@ -58,6 +58,7 @@ export type AdminProduct = {
   description: string | null;
   category: { id: string; name: string } | null;
   categoryName: string | null;
+  kitchenStation: { id: string; name: string; code: string } | null;
   price: number;
   currency: string;
   status: 'ACTIVE' | 'INACTIVE';
@@ -71,6 +72,7 @@ export type ProductFormInput = {
   name: string;
   description?: string;
   categoryId?: string;
+  kitchenStationId?: string;
   price: number;
   status?: 'ACTIVE' | 'INACTIVE';
   availabilityStatus?: 'AVAILABLE' | 'SOLD_OUT';
@@ -80,8 +82,54 @@ export type AdminCategory = {
   id: string;
   name: string;
   status: 'ACTIVE' | 'INACTIVE';
+  defaultKitchenStation: { id: string; name: string; code: string } | null;
   productCount: number;
   sortOrder: number;
+};
+
+export type KitchenStation = {
+  id: string;
+  name: string;
+  code: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  sortOrder: number;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type KitchenTicketStatus = 'NEW' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+
+export type KitchenTicket = {
+  id: string;
+  ticketNumber: string;
+  status: KitchenTicketStatus;
+  station: KitchenStation;
+  order: {
+    id: string;
+    orderNumber: string;
+    pickupNumber: string | null;
+    status: string;
+    total: number;
+    createdAt: string;
+  };
+  items: Array<{
+    id: string;
+    orderItemId: string;
+    productId: string;
+    productName: string;
+    quantity: number;
+    modifiers: Array<{ groupName?: string; optionName?: string; priceDelta?: number }>;
+    notes: string | null;
+    status: KitchenTicketStatus;
+  }>;
+  startedAt: string | null;
+  readyAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type AdminModifierGroup = {

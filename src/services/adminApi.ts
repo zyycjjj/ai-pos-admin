@@ -1,5 +1,19 @@
 import { apiClient } from './apiClient';
-import type { AiDraft, AdminCategory, AdminModifierGroup, AdminModifierOption, AdminProduct, AdminShift, CampaignDraft, DashboardSummary, ProductFormInput, StaffMember } from '../types/admin';
+import type {
+  AiDraft,
+  AdminCategory,
+  AdminModifierGroup,
+  AdminModifierOption,
+  AdminProduct,
+  AdminShift,
+  CampaignDraft,
+  DashboardSummary,
+  KitchenStation,
+  KitchenTicket,
+  KitchenTicketStatus,
+  ProductFormInput,
+  StaffMember,
+} from '../types/admin';
 import type { StoreRole } from '../types/auth';
 
 export async function fetchDashboard() {
@@ -40,6 +54,7 @@ export async function disableStaff(id: string, disabled: boolean) {
 export type ProductFilters = {
   search?: string;
   categoryId?: string;
+  kitchenStationId?: string;
   status?: 'ACTIVE' | 'INACTIVE' | '';
   availabilityStatus?: 'AVAILABLE' | 'SOLD_OUT' | '';
 };
@@ -79,18 +94,68 @@ export async function fetchCategories() {
   return data;
 }
 
-export async function createCategory(input: { name: string; sortOrder?: number }) {
+export async function createCategory(input: { name: string; sortOrder?: number; defaultKitchenStationId?: string }) {
   const { data } = await apiClient.post<AdminCategory>('/admin/categories', input);
   return data;
 }
 
-export async function updateCategory(id: string, input: { name: string; sortOrder?: number }) {
+export async function updateCategory(id: string, input: { name: string; sortOrder?: number; defaultKitchenStationId?: string }) {
   const { data } = await apiClient.patch<AdminCategory>(`/admin/categories/${id}`, input);
   return data;
 }
 
 export async function updateCategoryStatus(id: string, status: 'ACTIVE' | 'INACTIVE') {
   const { data } = await apiClient.patch<AdminCategory>(`/admin/categories/${id}/status`, { status });
+  return data;
+}
+
+export async function fetchKitchenStations() {
+  const { data } = await apiClient.get<KitchenStation[]>('/admin/kitchen/stations');
+  return data;
+}
+
+export async function createKitchenStation(input: { name: string; code: string; sortOrder?: number; isDefault?: boolean }) {
+  const { data } = await apiClient.post<KitchenStation>('/admin/kitchen/stations', input);
+  return data;
+}
+
+export async function updateKitchenStation(id: string, input: { name: string; code: string; sortOrder?: number; isDefault?: boolean }) {
+  const { data } = await apiClient.patch<KitchenStation>(`/admin/kitchen/stations/${id}`, input);
+  return data;
+}
+
+export async function updateKitchenStationStatus(id: string, status: 'ACTIVE' | 'INACTIVE') {
+  const { data } = await apiClient.patch<KitchenStation>(`/admin/kitchen/stations/${id}/status`, { status });
+  return data;
+}
+
+export async function setDefaultKitchenStation(id: string) {
+  const { data } = await apiClient.patch<KitchenStation>(`/admin/kitchen/stations/${id}/default`);
+  return data;
+}
+
+export async function fetchKitchenTickets(filters: { stationId?: string; status?: KitchenTicketStatus | ''; take?: number } = {}) {
+  const { data } = await apiClient.get<KitchenTicket[]>('/admin/kitchen/tickets', { params: filters });
+  return data;
+}
+
+export async function startKitchenTicket(id: string) {
+  const { data } = await apiClient.post<KitchenTicket>(`/admin/kitchen/tickets/${id}/start`);
+  return data;
+}
+
+export async function markKitchenTicketReady(id: string) {
+  const { data } = await apiClient.post<KitchenTicket>(`/admin/kitchen/tickets/${id}/ready`);
+  return data;
+}
+
+export async function completeKitchenTicket(id: string) {
+  const { data } = await apiClient.post<KitchenTicket>(`/admin/kitchen/tickets/${id}/complete`);
+  return data;
+}
+
+export async function cancelKitchenTicket(id: string, reason: string) {
+  const { data } = await apiClient.post<KitchenTicket>(`/admin/kitchen/tickets/${id}/cancel`, { reason });
   return data;
 }
 

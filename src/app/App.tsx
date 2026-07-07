@@ -7,6 +7,7 @@ import { CampaignsPage } from '../pages/CampaignsPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { LoginPage } from '../pages/LoginPage';
+import { KitchenPage } from '../pages/KitchenPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { ShiftsPage } from '../pages/ShiftsPage';
 import { StaffPage } from '../pages/StaffPage';
@@ -40,6 +41,7 @@ export function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/staff" element={<StaffPage />} />
             <Route path="/shifts" element={<ShiftsPage />} />
+            <Route path="/kitchen" element={<KitchenPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/ai-center" element={<AiCenterPage />} />

@@ -511,7 +511,103 @@ tr:last-child td {
 }
 
 .category-row {
-  grid-template-columns: minmax(0, 1fr) 96px 100px 92px 92px;
+  grid-template-columns: minmax(0, 1fr) 160px 96px 100px 92px 92px;
+}
+
+.ops-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.85fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.panel-header,
+.station-row,
+.ticket-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-header {
+  margin-bottom: 14px;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: #17211b;
+  letter-spacing: 0;
+}
+
+.kitchen-station-form {
+  grid-template-columns: minmax(0, 1fr) 96px 92px 100px 112px;
+  margin-bottom: 14px;
+}
+
+.compact-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  color: #3f4f45;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.compact-check input {
+  width: 16px;
+  height: 16px;
+}
+
+.station-list,
+.ticket-list,
+.ticket-items {
+  display: grid;
+  gap: 10px;
+}
+
+.station-row {
+  padding: 12px;
+  border: 1px solid #edf0ec;
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.station-row > div:first-child,
+.ticket-items div,
+.kitchen-ticket-card .modifier-card-header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.station-row small,
+.ticket-items small,
+.kitchen-ticket-card small,
+.ticket-meta {
+  color: #66736b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.compact-filter {
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  margin-bottom: 14px;
+}
+
+.kitchen-ticket-card {
+  background: #ffffff;
+}
+
+.ticket-items {
+  padding: 10px 0;
+  border-top: 1px solid #edf0ec;
+  border-bottom: 1px solid #edf0ec;
+}
+
+.ticket-items span {
+  color: #17211b;
+  font-weight: 800;
 }
 
 .state-panel {

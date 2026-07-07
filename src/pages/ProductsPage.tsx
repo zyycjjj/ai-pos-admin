@@ -9,6 +9,7 @@ import {
   createModifierOption,
   createProduct,
   fetchCategories,
+  fetchKitchenStations,
   fetchProduct,
   fetchProducts,
   type ProductFilters,
@@ -22,7 +23,7 @@ import {
   updateProductAvailability,
   updateProductStatus,
 } from '../services/adminApi';
-import type { AdminCategory, AdminModifierGroup, AdminModifierOption, AdminProduct, ProductFormInput } from '../types/admin';
+import type { AdminCategory, AdminModifierGroup, AdminModifierOption, AdminProduct, KitchenStation, ProductFormInput } from '../types/admin';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -33,6 +34,7 @@ const emptyProductForm: ProductFormInput = {
   price: 0,
   status: 'ACTIVE',
   availabilityStatus: 'AVAILABLE',
+  kitchenStationId: '',
 };
 
 type ModifierGroupForm = {
@@ -50,6 +52,7 @@ export function ProductsPage() {
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const productsQuery = useQuery({ queryKey: ['admin', 'products', filters], queryFn: () => fetchProducts(filters) });
   const categoriesQuery = useQuery({ queryKey: ['admin', 'categories'], queryFn: fetchCategories });
+  const kitchenStationsQuery = useQuery({ queryKey: ['admin', 'kitchen', 'stations'], queryFn: fetchKitchenStations });
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'ACTIVE' | 'INACTIVE' }) => updateProductStatus(id, status),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }),
@@ -60,6 +63,7 @@ export function ProductsPage() {
   });
 
   const activeCategories = useMemo(() => (categoriesQuery.data ?? []).filter((category) => category.status === 'ACTIVE'), [categoriesQuery.data]);
+  const activeKitchenStations = useMemo(() => (kitchenStationsQuery.data ?? []).filter((station) => station.status === 'ACTIVE'), [kitchenStationsQuery.data]);
 
   return (
     <section>
@@ -97,6 +101,15 @@ export function ProductsPage() {
           </select>
         </label>
         <label>
+          Kitchen
+          <select value={filters.kitchenStationId ?? ''} onChange={(event) => setFilters((current) => ({ ...current, kitchenStationId: event.target.value || undefined }))}>
+            <option value="">All stations</option>
+            {activeKitchenStations.map((station) => (
+              <option key={station.id} value={station.id}>{station.name}</option>
+            ))}
+          </select>
+        </label>
+        <label>
           Status
           <select value={filters.status ?? ''} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as ProductFilters['status'] }))}>
             <option value="">All</option>
@@ -127,6 +140,7 @@ export function ProductsPage() {
               <tr>
                 <th>Name</th>
                 <th>Category</th>
+                <th>Kitchen</th>
                 <th>Price</th>
                 <th>Status</th>
                 <th>Availability</th>
@@ -143,6 +157,7 @@ export function ProductsPage() {
                     {product.description ? <small>{product.description}</small> : null}
                   </td>
                   <td>{product.categoryName ?? 'Menu'}</td>
+                  <td>{product.kitchenStation?.name ?? 'Default route'}</td>
                   <td>{money.format(product.price)}</td>
                   <td><span className={`status ${product.status.toLowerCase()}`}>{product.status}</span></td>
                   <td><span className={`status ${product.availabilityStatus.toLowerCase().replace('_', '-')}`}>{product.availabilityStatus.replace('_', ' ')}</span></td>
@@ -177,16 +192,27 @@ export function ProductsPage() {
       {editorProductId ? (
         <ProductEditor
           activeCategories={activeCategories}
+          activeKitchenStations={activeKitchenStations}
           productId={editorProductId}
           onClose={() => setEditorProductId(null)}
         />
       ) : null}
-      {categoryManagerOpen ? <CategoryManager categories={categoriesQuery.data ?? []} onClose={() => setCategoryManagerOpen(false)} /> : null}
+      {categoryManagerOpen ? <CategoryManager activeKitchenStations={activeKitchenStations} categories={categoriesQuery.data ?? []} onClose={() => setCategoryManagerOpen(false)} /> : null}
     </section>
   );
 }
 
-function ProductEditor({ activeCategories, productId, onClose }: { activeCategories: AdminCategory[]; productId: string; onClose: () => void }) {
+function ProductEditor({
+  activeCategories,
+  activeKitchenStations,
+  productId,
+  onClose,
+}: {
+  activeCategories: AdminCategory[];
+  activeKitchenStations: KitchenStation[];
+  productId: string;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const isNew = productId === 'new';
   const productQuery = useQuery({ queryKey: ['admin', 'product', productId], queryFn: () => fetchProduct(productId), enabled: !isNew });
@@ -228,6 +254,13 @@ function ProductEditor({ activeCategories, productId, onClose }: { activeCategor
               <select value={visibleForm.categoryId ?? ''} onChange={(event) => updateField('categoryId', event.target.value)}>
                 <option value="">Menu</option>
                 {activeCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </label>
+            <label>
+              Kitchen
+              <select value={visibleForm.kitchenStationId ?? ''} onChange={(event) => updateField('kitchenStationId', event.target.value)}>
+                <option value="">Category/default route</option>
+                {activeKitchenStations.map((station) => <option key={station.id} value={station.id}>{station.name}</option>)}
               </select>
             </label>
             <label>
@@ -362,7 +395,15 @@ function ModifierOptionRow({ option, onSaved }: { option: AdminModifierOption; o
   );
 }
 
-function CategoryManager({ categories, onClose }: { categories: AdminCategory[]; onClose: () => void }) {
+function CategoryManager({
+  activeKitchenStations,
+  categories,
+  onClose,
+}: {
+  activeKitchenStations: KitchenStation[];
+  categories: AdminCategory[];
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const create = useMutation({
@@ -389,21 +430,26 @@ function CategoryManager({ categories, onClose }: { categories: AdminCategory[];
           <button className="primary-button" type="button" onClick={() => create.mutate()}>Create</button>
         </div>
         <div className="category-list">
-          {categories.map((category) => <CategoryRow key={category.id} category={category} onSaved={refresh} />)}
+          {categories.map((category) => <CategoryRow key={category.id} activeKitchenStations={activeKitchenStations} category={category} onSaved={refresh} />)}
         </div>
       </aside>
     </div>
   );
 }
 
-function CategoryRow({ category, onSaved }: { category: AdminCategory; onSaved: () => void }) {
+function CategoryRow({ activeKitchenStations, category, onSaved }: { activeKitchenStations: KitchenStation[]; category: AdminCategory; onSaved: () => void }) {
   const [name, setName] = useState(category.name);
-  const save = useMutation({ mutationFn: () => updateCategory(category.id, { name, sortOrder: category.sortOrder }), onSuccess: onSaved });
+  const [defaultKitchenStationId, setDefaultKitchenStationId] = useState(category.defaultKitchenStation?.id ?? '');
+  const save = useMutation({ mutationFn: () => updateCategory(category.id, { name, sortOrder: category.sortOrder, defaultKitchenStationId }), onSuccess: onSaved });
   const toggle = useMutation({ mutationFn: () => updateCategoryStatus(category.id, category.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'), onSuccess: onSaved });
 
   return (
     <div className="category-row">
       <input value={name} onChange={(event) => setName(event.target.value)} />
+      <select value={defaultKitchenStationId} onChange={(event) => setDefaultKitchenStationId(event.target.value)}>
+        <option value="">Store default</option>
+        {activeKitchenStations.map((station) => <option key={station.id} value={station.id}>{station.name}</option>)}
+      </select>
       <span className={`status ${category.status.toLowerCase()}`}>{category.status}</span>
       <span>{category.productCount} products</span>
       <button className="secondary-button" type="button" onClick={() => save.mutate()}>Rename</button>
@@ -420,6 +466,7 @@ function productToForm(product?: AdminProduct): ProductFormInput {
     name: product.name,
     description: product.description ?? '',
     categoryId: product.category?.id ?? '',
+    kitchenStationId: product.kitchenStation?.id ?? '',
     price: product.price,
     status: product.status,
     availabilityStatus: product.availabilityStatus,
