@@ -8,6 +8,7 @@ import { DashboardPage } from '../pages/DashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { LoginPage } from '../pages/LoginPage';
 import { ProductsPage } from '../pages/ProductsPage';
+import { ShiftsPage } from '../pages/ShiftsPage';
 import { StaffPage } from '../pages/StaffPage';
 import { useAuthStore } from '../stores/authStore';
 
@@ -38,6 +39,7 @@ export function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/staff" element={<StaffPage />} />
+            <Route path="/shifts" element={<ShiftsPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/ai-center" element={<AiCenterPage />} />

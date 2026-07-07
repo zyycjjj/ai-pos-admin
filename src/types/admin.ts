@@ -2,9 +2,45 @@ import type { StoreRole } from './auth';
 
 export type DashboardSummary = {
   todaySales: number;
+  grossSales?: number;
+  netSales?: number;
+  refundTotal?: number;
+  refundCount?: number;
   ordersCount: number;
   avgTicket: number;
   activeProducts: number;
+};
+
+export type AdminCashMovement = {
+  id: string;
+  shiftId: string;
+  type: 'OPENING' | 'SALE' | 'REFUND' | 'CASH_IN' | 'CASH_OUT' | 'ADJUSTMENT';
+  amount: number;
+  reason: string;
+  referenceType: 'ORDER_PAYMENT' | 'REFUND' | 'MANUAL';
+  referenceId: string | null;
+  createdByName: string | null;
+  createdAt: string;
+};
+
+export type AdminShift = {
+  id: string;
+  userId: string;
+  staffName: string;
+  status: 'OPEN' | 'CLOSED';
+  openedAt: string;
+  closedAt: string | null;
+  openingCash: number;
+  cashSales: number;
+  cashRefunds: number;
+  cashIn: number;
+  cashOut: number;
+  adjustments: number;
+  expectedCash: number;
+  actualCash: number | null;
+  variance: number | null;
+  notes: string | null;
+  movements: AdminCashMovement[];
 };
 
 export type StaffMember = {

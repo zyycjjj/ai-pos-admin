@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import type { AiDraft, AdminCategory, AdminModifierGroup, AdminModifierOption, AdminProduct, CampaignDraft, DashboardSummary, ProductFormInput, StaffMember } from '../types/admin';
+import type { AiDraft, AdminCategory, AdminModifierGroup, AdminModifierOption, AdminProduct, AdminShift, CampaignDraft, DashboardSummary, ProductFormInput, StaffMember } from '../types/admin';
 import type { StoreRole } from '../types/auth';
 
 export async function fetchDashboard() {
@@ -9,6 +9,16 @@ export async function fetchDashboard() {
 
 export async function fetchStaff() {
   const { data } = await apiClient.get<StaffMember[]>('/admin/staff');
+  return data;
+}
+
+export async function fetchShifts() {
+  const { data } = await apiClient.get<AdminShift[]>('/admin/shifts');
+  return data;
+}
+
+export async function fetchShift(id: string) {
+  const { data } = await apiClient.get<AdminShift>(`/admin/shifts/${id}`);
   return data;
 }
 
