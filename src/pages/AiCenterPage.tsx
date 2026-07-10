@@ -1,46 +1,45 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
-import { fetchAiDrafts } from '../services/adminApi';
+import { ErrorState, LoadingState } from '../components/PageState';
+import { CopilotPanel } from '../features/copilot/components/CopilotPanel';
+import { useAiCopilotPage } from '../features/copilot/hooks/useAiCopilotPage';
 
 export function AiCenterPage() {
-  const query = useQuery({ queryKey: ['admin', 'ai-drafts'], queryFn: fetchAiDrafts });
+  const vm = useAiCopilotPage();
+  const dailyBrief = vm.queries.dailyBriefQuery.data;
+  const isLoading = vm.queries.dailyBriefQuery.isLoading && !dailyBrief;
+  const suggestedQuestions = dailyBrief?.suggestedQuestions ?? [
+    'How is my business doing today?',
+    'Which products are underperforming?',
+    'Why are refunds increasing?',
+  ];
 
   return (
-    <section>
+    <section className="copilot-page">
       <div className="page-header row">
         <div>
-          <span className="eyebrow">Human reviewed AI</span>
-          <h1>AI Center</h1>
+          <span className="eyebrow">Metric-grounded AI</span>
+          <h1>AI Business Copilot</h1>
         </div>
-        <button className="secondary-button" disabled type="button">Generate · Use POS flow</button>
+        <span className="analytics-period">{dailyBrief?.source === 'deepseek' ? 'DeepSeek' : 'Deterministic fallback'}</span>
       </div>
-      {query.isLoading ? <LoadingState title="Loading AI drafts" /> : null}
-      {query.isError ? <ErrorState title="AI drafts unavailable" description="Check the backend connection and try again." /> : null}
-      {query.data?.length === 0 ? <EmptyState title="No AI drafts" description="AI menu and campaign drafts will appear here." /> : null}
-      {query.data && query.data.length > 0 ? (
-        <div className="table-card">
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Created At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {query.data.map((draft) => (
-                <tr key={draft.id}>
-                  <td>{draft.title}</td>
-                  <td>{draft.type}</td>
-                  <td><span className="status draft">{draft.status}</span></td>
-                  <td>{new Date(draft.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {isLoading ? <LoadingState title="Preparing business context" /> : null}
+      {vm.queries.dailyBriefQuery.isError ? <ErrorState title="Copilot unavailable" description="Analytics context could not be loaded. No business data was changed." /> : null}
+      {!isLoading && !vm.queries.dailyBriefQuery.isError ? (
+        <CopilotPanel
+          conversations={vm.queries.conversationsQuery.data ?? []}
+          dailyBrief={dailyBrief}
+          drafts={vm.queries.draftsQuery.data ?? []}
+          error={vm.mutation.isError ? 'Copilot could not answer this question. No business data was changed.' : null}
+          isLoading={isLoading}
+          isSending={vm.mutation.isPending}
+          message={vm.state.message}
+          onMessageChange={vm.actions.setMessage}
+          onPresetChange={vm.actions.setPeriodPreset}
+          onPrompt={vm.actions.usePrompt}
+          onSubmit={() => vm.actions.submit()}
+          period={vm.state.period}
+          responses={vm.state.responses}
+          suggestedQuestions={suggestedQuestions}
+        />
       ) : null}
     </section>
   );

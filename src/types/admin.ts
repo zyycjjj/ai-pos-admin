@@ -316,11 +316,68 @@ export type AnalyticsContext = {
   kitchen: AnalyticsKitchenMetric[];
   payments: Array<{ method: string; amount: number; sharePercent: number }>;
   signals: Array<{ type: string; severity: 'INFO' | 'WARNING'; metric: string; currentValue: number; changePercent: number | null; label?: string }>;
+  coverage: Record<string, boolean>;
 };
 
 export type AnalyticsFilters = {
   preset?: 'today' | 'yesterday' | 'last_7_days' | 'last_30_days';
   from?: string;
   to?: string;
-  compare: 'previous_period' | 'previous_week';
+  compare?: 'previous_period' | 'previous_day' | 'previous_week';
+};
+
+export type CopilotEvidence = {
+  label: string;
+  value: number | string | null;
+  comparisonValue?: number | string | null;
+  changePercent?: number | null;
+};
+
+export type CopilotStructuredMessage = {
+  answer: string;
+  summary: string;
+  evidence: CopilotEvidence[];
+  drivers: Array<{ type: string; text: string }>;
+  risks: Array<{ severity: 'INFO' | 'WARNING'; text: string }>;
+  recommendations: Array<{ title: string; description: string }>;
+  limitations: string[];
+};
+
+export type CopilotChatResponse = CopilotStructuredMessage & {
+  conversationId: string;
+  messageId: string;
+  executionId: string;
+  provider: string;
+  model: string;
+  source: 'deepseek' | 'fallback';
+  contextType: string;
+  period: AnalyticsPeriod;
+  comparisonPeriod: AnalyticsPeriod;
+  dataCoverage: Record<string, boolean>;
+  suggestedQuestions: string[];
+};
+
+export type CopilotConversationSummary = {
+  id: string;
+  title: string;
+  status: string;
+  lastMessageAt: string;
+  lastMessage: string | null;
+  createdAt: string;
+};
+
+export type CopilotMessage = {
+  id: string;
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
+  content: string;
+  structuredData: CopilotStructuredMessage | null;
+  periodContext: unknown;
+  createdAt: string;
+};
+
+export type CopilotConversationDetail = {
+  id: string;
+  title: string;
+  status: string;
+  messages: CopilotMessage[];
 };

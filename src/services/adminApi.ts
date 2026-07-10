@@ -9,6 +9,9 @@ import type {
   AdminProduct,
   AdminShift,
   CampaignDraft,
+  CopilotChatResponse,
+  CopilotConversationDetail,
+  CopilotConversationSummary,
   DashboardSummary,
   KitchenStation,
   KitchenTicket,
@@ -34,6 +37,30 @@ export async function fetchDashboard() {
 
 export async function fetchAnalyticsContext(filters: AnalyticsFilters) {
   const { data } = await apiClient.get<AnalyticsContext>('/admin/analytics/ai-context', { params: filters });
+  return data;
+}
+
+export async function fetchCopilotDailyBrief() {
+  const { data } = await apiClient.get<CopilotChatResponse>('/admin/ai/copilot/daily-brief');
+  return data;
+}
+
+export async function fetchCopilotConversations() {
+  const { data } = await apiClient.get<CopilotConversationSummary[]>('/admin/ai/copilot/conversations');
+  return data;
+}
+
+export async function fetchCopilotConversation(id: string) {
+  const { data } = await apiClient.get<CopilotConversationDetail>(`/admin/ai/copilot/conversations/${id}`);
+  return data;
+}
+
+export async function sendCopilotMessage(input: {
+  conversationId?: string;
+  message: string;
+  period?: AnalyticsFilters;
+}) {
+  const { data } = await apiClient.post<CopilotChatResponse>('/admin/ai/copilot/chat', input);
   return data;
 }
 
