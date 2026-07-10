@@ -1,6 +1,8 @@
 import { apiClient } from './apiClient';
 import type {
   AiDraft,
+  AnalyticsContext,
+  AnalyticsFilters,
   AdminCategory,
   AdminModifierGroup,
   AdminModifierOption,
@@ -11,6 +13,15 @@ import type {
   KitchenStation,
   KitchenTicket,
   KitchenTicketStatus,
+  PrintDocumentType,
+  PrintJob,
+  PrintJobStatus,
+  Printer,
+  PrinterConnectionType,
+  PrinterRoute,
+  PrinterRouteType,
+  PrinterStatus,
+  PrinterType,
   ProductFormInput,
   StaffMember,
 } from '../types/admin';
@@ -18,6 +29,11 @@ import type { StoreRole } from '../types/auth';
 
 export async function fetchDashboard() {
   const { data } = await apiClient.get<DashboardSummary>('/admin/dashboard');
+  return data;
+}
+
+export async function fetchAnalyticsContext(filters: AnalyticsFilters) {
+  const { data } = await apiClient.get<AnalyticsContext>('/admin/analytics/ai-context', { params: filters });
   return data;
 }
 
@@ -156,6 +172,77 @@ export async function completeKitchenTicket(id: string) {
 
 export async function cancelKitchenTicket(id: string, reason: string) {
   const { data } = await apiClient.post<KitchenTicket>(`/admin/kitchen/tickets/${id}/cancel`, { reason });
+  return data;
+}
+
+export type PrinterFormInput = {
+  name: string;
+  code: string;
+  type: PrinterType;
+  connectionType: PrinterConnectionType;
+  host?: string;
+  port?: number;
+  usbVendorId?: string;
+  usbProductId?: string;
+  paperWidth?: number;
+  autoCut?: boolean;
+  cashDrawerPulse?: boolean;
+};
+
+export type PrinterRouteInput = {
+  printerId: string;
+  routeType: PrinterRouteType;
+  targetId?: string;
+  documentType: PrintDocumentType;
+};
+
+export async function fetchPrinters() {
+  const { data } = await apiClient.get<Printer[]>('/admin/printers');
+  return data;
+}
+
+export async function createPrinter(input: PrinterFormInput) {
+  const { data } = await apiClient.post<Printer>('/admin/printers', input);
+  return data;
+}
+
+export async function updatePrinter(id: string, input: PrinterFormInput) {
+  const { data } = await apiClient.patch<Printer>(`/admin/printers/${id}`, input);
+  return data;
+}
+
+export async function updatePrinterStatus(id: string, status: PrinterStatus) {
+  const { data } = await apiClient.patch<Printer>(`/admin/printers/${id}/status`, { status });
+  return data;
+}
+
+export async function testPrinter(id: string) {
+  const { data } = await apiClient.post<PrintJob>(`/admin/printers/${id}/test`);
+  return data;
+}
+
+export async function fetchPrinterRoutes() {
+  const { data } = await apiClient.get<PrinterRoute[]>('/admin/printer-routes');
+  return data;
+}
+
+export async function upsertPrinterRoute(input: PrinterRouteInput) {
+  const { data } = await apiClient.post<PrinterRoute>('/admin/printer-routes', input);
+  return data;
+}
+
+export async function deletePrinterRoute(id: string) {
+  const { data } = await apiClient.delete<{ id: string; deleted: boolean }>(`/admin/printer-routes/${id}`);
+  return data;
+}
+
+export async function fetchPrintJobs(filters: { status?: PrintJobStatus | ''; printerId?: string; documentType?: PrintDocumentType | ''; take?: number } = {}) {
+  const { data } = await apiClient.get<PrintJob[]>('/admin/print-jobs', { params: filters });
+  return data;
+}
+
+export async function retryPrintJob(id: string) {
+  const { data } = await apiClient.post<PrintJob>(`/admin/print-jobs/${id}/retry`);
   return data;
 }
 

@@ -132,6 +132,72 @@ export type KitchenTicket = {
   updatedAt: string;
 };
 
+export type PrinterType = 'RECEIPT' | 'KITCHEN' | 'MULTI_PURPOSE';
+export type PrinterConnectionType = 'LAN' | 'USB';
+export type PrinterStatus = 'ACTIVE' | 'INACTIVE';
+export type PrinterRouteType = 'STORE_DEFAULT' | 'KITCHEN_STATION';
+export type PrintDocumentType = 'CUSTOMER_RECEIPT' | 'KITCHEN_TICKET' | 'REFUND_RECEIPT' | 'SHIFT_SUMMARY' | 'TEST_PAGE';
+export type PrintJobReferenceType = 'ORDER' | 'KITCHEN_TICKET' | 'REFUND' | 'SHIFT' | 'TEST';
+export type PrintJobStatus = 'PENDING' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+export type PrintJobReason = 'AUTO' | 'MANUAL' | 'MANUAL_REPRINT' | 'TEST';
+
+export type Printer = {
+  id: string;
+  name: string;
+  code: string;
+  type: PrinterType;
+  connectionType: PrinterConnectionType;
+  status: PrinterStatus;
+  host: string | null;
+  port: number | null;
+  usbVendorId: string | null;
+  usbProductId: string | null;
+  paperWidth: number;
+  autoCut: boolean;
+  cashDrawerPulse: boolean;
+  address: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PrinterRoute = {
+  id: string;
+  printerId: string;
+  printer: Printer;
+  routeType: PrinterRouteType;
+  targetId: string;
+  documentType: PrintDocumentType;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PrintJob = {
+  id: string;
+  printerId: string | null;
+  printer: Printer | null;
+  documentType: PrintDocumentType;
+  referenceType: PrintJobReferenceType;
+  referenceId: string;
+  status: PrintJobStatus;
+  reason: PrintJobReason;
+  payload: unknown;
+  renderedText: string | null;
+  byteLength: number | null;
+  retryCount: number;
+  maxRetries: number;
+  lastError: string | null;
+  autoPrintKey: string | null;
+  sourceJobId: string | null;
+  requestedByUserId: string | null;
+  requestedByName: string | null;
+  claimedByDeviceId: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  nextRetryAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AdminModifierGroup = {
   id: string;
   name: string;
@@ -169,4 +235,92 @@ export type AiDraft = {
   title: string;
   status: string;
   createdAt: string;
+};
+
+export type AnalyticsPeriod = { from: string; to: string; timezone: string };
+export type AnalyticsSalesMetric = {
+  grossSales: number;
+  refundTotal: number;
+  netSales: number;
+  orderCount: number;
+  paidOrderCount: number;
+  averageTicket: number;
+  unitsSold: number;
+};
+export type AnalyticsProductMetric = {
+  productId: string;
+  name: string;
+  category: string;
+  unitsSold: number;
+  orderCount: number;
+  grossSales: number;
+  refundAmount: number;
+  netSales: number;
+  orderPenetration: number;
+  changePercent: number | null;
+};
+export type AnalyticsCategoryMetric = {
+  categoryId: string | null;
+  name: string;
+  unitsSold: number;
+  netSales: number;
+  sharePercent: number;
+  changePercent: number | null;
+};
+export type AnalyticsModifierMetric = {
+  optionId: string;
+  name: string;
+  groupName: string;
+  selectionCount: number;
+  eligibleProductItemCount: number;
+  attachRate: number;
+  revenueContribution: number;
+};
+export type AnalyticsShiftMetric = {
+  shiftId: string;
+  staffName: string;
+  netSales: number;
+  orderCount: number;
+  cashVariance: number | null;
+};
+export type AnalyticsKitchenMetric = {
+  stationId: string;
+  stationName: string;
+  ticketCount: number;
+  lateTicketCount: number;
+  avgQueueTimeMinutes: number | null;
+  avgPrepTimeMinutes: number | null;
+  avgTotalTimeMinutes: number | null;
+};
+export type AnalyticsContext = {
+  store: { id: string; name: string; timezone: string; currency: string };
+  period: AnalyticsPeriod;
+  comparisonPeriod: AnalyticsPeriod;
+  overview: AnalyticsSalesMetric;
+  comparison: Record<string, number | boolean | null>;
+  daily: Array<{ date: string; netSales: number; orderCount: number }>;
+  hourly: Array<{ hour: number; netSales: number; orderCount: number }>;
+  topProducts: AnalyticsProductMetric[];
+  decliningProducts: AnalyticsProductMetric[];
+  categories: AnalyticsCategoryMetric[];
+  modifiers: AnalyticsModifierMetric[];
+  refunds: {
+    refundTotal: number;
+    refundCount: number;
+    refundRate: number;
+    refundedOrderRate: number;
+    topReasons: Array<{ reason: string; count: number; amount: number }>;
+    topRefundedProducts: Array<{ productId: string; name: string; quantity: number; amount: number }>;
+  };
+  shifts: AnalyticsShiftMetric[];
+  kitchen: AnalyticsKitchenMetric[];
+  payments: Array<{ method: string; amount: number; sharePercent: number }>;
+  signals: Array<{ type: string; severity: 'INFO' | 'WARNING'; metric: string; currentValue: number; changePercent: number | null; label?: string }>;
+};
+
+export type AnalyticsFilters = {
+  preset?: 'today' | 'yesterday' | 'last_7_days' | 'last_30_days';
+  from?: string;
+  to?: string;
+  compare: 'previous_period' | 'previous_week';
 };

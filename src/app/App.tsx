@@ -3,11 +3,13 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AdminLayout } from '../layouts/AdminLayout';
 import { AiCenterPage } from '../pages/AiCenterPage';
+import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { CampaignsPage } from '../pages/CampaignsPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { LoginPage } from '../pages/LoginPage';
 import { KitchenPage } from '../pages/KitchenPage';
+import { PrintersPage } from '../pages/PrintersPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { ShiftsPage } from '../pages/ShiftsPage';
 import { StaffPage } from '../pages/StaffPage';
@@ -39,9 +41,11 @@ export function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/staff" element={<StaffPage />} />
             <Route path="/shifts" element={<ShiftsPage />} />
             <Route path="/kitchen" element={<KitchenPage />} />
+            <Route path="/printers" element={<PrintersPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/ai-center" element={<AiCenterPage />} />

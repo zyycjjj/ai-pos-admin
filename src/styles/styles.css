@@ -292,6 +292,176 @@ select {
   font-size: 30px;
 }
 
+.analytics-page {
+  display: grid;
+  gap: 18px;
+}
+
+.analytics-period,
+.panel-header span {
+  color: #66736b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.analytics-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #dde3dc;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.segmented-control {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #f1f4f0;
+}
+
+.segmented-control button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #66736b;
+  padding: 0 12px;
+  font-weight: 800;
+}
+
+.segmented-control button.active {
+  background: #ffffff;
+  color: #234f35;
+  box-shadow: 0 2px 8px rgba(30, 45, 36, 0.08);
+}
+
+.analytics-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-metric-grid .metric-card strong {
+  font-size: 25px;
+}
+
+.trend {
+  color: #176b32;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.trend.down {
+  color: #b42318;
+}
+
+.signal-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.signal {
+  border-radius: 999px;
+  background: #e8f3ea;
+  color: #285438;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: capitalize;
+}
+
+.signal.warning {
+  background: #fff1d7;
+  color: #915b00;
+}
+
+.analytics-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.analytics-panel {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #dde3dc;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 36px rgba(30, 45, 36, 0.05);
+}
+
+.analytics-panel .table-card {
+  border: 1px solid #edf0ec;
+  box-shadow: none;
+}
+
+.analytics-bar-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  color: #66736b;
+  font-size: 12px;
+}
+
+.analytics-bar-row div {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #edf0ec;
+}
+
+.analytics-bar-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #48745a;
+}
+
+.analytics-bar-row strong {
+  color: #2d3931;
+  text-align: right;
+}
+
+.analytics-sections {
+  display: grid;
+  gap: 18px;
+}
+
+.analytics-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 54px;
+  border-bottom: 1px solid #edf0ec;
+  color: #536058;
+  font-size: 13px;
+}
+
+.analytics-list-row:last-child {
+  border-bottom: 0;
+}
+
+.analytics-list-row > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.analytics-list-row strong {
+  color: #17211b;
+}
+
+.analytics-list-row small,
+.analytics-empty {
+  color: #7a867e;
+}
+
 .inline-form {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1fr 150px 140px;
@@ -403,6 +573,28 @@ tr:last-child td {
 .status.sold-out {
   background: #fff1d7;
   color: #915b00;
+}
+
+.status-pill {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #edf0ec;
+  color: #425047;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.status-pill.success {
+  background: #dff7e4;
+  color: #176b32;
+}
+
+.status-pill.danger {
+  background: #f1e6e4;
+  color: #96352b;
 }
 
 .drawer-backdrop {
@@ -597,6 +789,44 @@ tr:last-child td {
 
 .kitchen-ticket-card {
   background: #ffffff;
+}
+
+.printer-ops-grid {
+  grid-template-columns: minmax(460px, 1fr) minmax(420px, 0.9fr);
+  margin-bottom: 18px;
+}
+
+.printer-config-card {
+  padding: 18px;
+}
+
+.printer-form,
+.printer-route-form {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.printer-form {
+  grid-template-columns: minmax(0, 1fr) 108px 132px 96px repeat(2, 120px);
+}
+
+.printer-route-form {
+  grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr) 170px 120px;
+}
+
+.printer-jobs-card {
+  padding-top: 18px;
+}
+
+.printer-jobs-card .panel-header {
+  padding: 0 18px;
+}
+
+.print-job-filter {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  margin: 0 18px 12px;
 }
 
 .ticket-items {
