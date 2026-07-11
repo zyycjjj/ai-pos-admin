@@ -1,4 +1,5 @@
 import type { AnalyticsContext } from '../../../types/admin';
+import { useAdminI18n } from '../../../i18n';
 
 const Bar = ({ label, value, max, suffix = '' }: { label: string; value: number; max: number; suffix?: string }) => (
   <div className="analytics-bar-row">
@@ -9,20 +10,20 @@ const Bar = ({ label, value, max, suffix = '' }: { label: string; value: number;
 );
 
 export function AnalyticsCharts({ data }: { data: AnalyticsContext }) {
+  const { t } = useAdminI18n();
   const peakHours = [...data.hourly].sort((a, b) => b.netSales - a.netSales).slice(0, 8).sort((a, b) => a.hour - b.hour);
   const maxDaily = Math.max(0, ...data.daily.map((item) => item.netSales));
   const maxHourly = Math.max(0, ...peakHours.map((item) => item.netSales));
   return (
     <div className="analytics-two-column">
       <section className="analytics-panel">
-        <div className="panel-header"><h2>Daily net sales</h2><span>{data.period.from} — {data.period.to}</span></div>
-        {data.daily.every((item) => item.netSales === 0) ? <p className="analytics-empty">No sales in this period.</p> : data.daily.map((item) => <Bar key={item.date} label={item.date.slice(5)} value={item.netSales} max={maxDaily} />)}
+        <div className="panel-header"><h2>{t('analytics.dailyNetSales')}</h2><span>{data.period.from} — {data.period.to}</span></div>
+        {data.daily.every((item) => item.netSales === 0) ? <p className="analytics-empty">{t('analytics.noSalesPeriod')}</p> : data.daily.map((item) => <Bar key={item.date} label={item.date.slice(5)} value={item.netSales} max={maxDaily} />)}
       </section>
       <section className="analytics-panel">
-        <div className="panel-header"><h2>Peak hours</h2><span>Store local time</span></div>
-        {peakHours.every((item) => item.netSales === 0) ? <p className="analytics-empty">No hourly sales yet.</p> : peakHours.map((item) => <Bar key={item.hour} label={`${String(item.hour).padStart(2, '0')}:00`} value={item.netSales} max={maxHourly} />)}
+        <div className="panel-header"><h2>{t('analytics.peakHours')}</h2><span>{t('analytics.storeLocalTime')}</span></div>
+        {peakHours.every((item) => item.netSales === 0) ? <p className="analytics-empty">{t('analytics.noHourlySales')}</p> : peakHours.map((item) => <Bar key={item.hour} label={`${String(item.hour).padStart(2, '0')}:00`} value={item.netSales} max={maxHourly} />)}
       </section>
     </div>
   );
 }
-

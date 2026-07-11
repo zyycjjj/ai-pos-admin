@@ -381,3 +381,18 @@ export type CopilotConversationDetail = {
   status: string;
   messages: CopilotMessage[];
 };
+
+export type AdminOrder = {
+  id: string;
+  orderNumber: string;
+  pickupNumber: string | null;
+  status: string;
+  printStatus: string;
+  paymentMethod: string | null;
+  currency: string;
+  total: number;
+  refundedTotal: number;
+  itemCount?: number;
+  items: Array<{ id: string; quantity: number }>;
+  createdAt: string;
+};

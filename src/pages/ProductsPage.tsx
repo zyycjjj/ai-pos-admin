@@ -3,6 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, X } from 'lucide-react';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
+import { formatStatusLabel, useAdminI18n } from '../i18n';
 import {
   createCategory,
   createModifierGroup,
@@ -47,10 +50,12 @@ type ModifierGroupForm = {
 
 export function ProductsPage() {
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
   const [filters, setFilters] = useState<ProductFilters>({});
   const [editorProductId, setEditorProductId] = useState<string | null>(null);
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const productsQuery = useQuery({ queryKey: ['admin', 'products', filters], queryFn: () => fetchProducts(filters) });
+  const pagination = usePagination(productsQuery.data, 10);
   const categoriesQuery = useQuery({ queryKey: ['admin', 'categories'], queryFn: fetchCategories });
   const kitchenStationsQuery = useQuery({ queryKey: ['admin', 'kitchen', 'stations'], queryFn: fetchKitchenStations });
   const statusMutation = useMutation({
@@ -69,116 +74,116 @@ export function ProductsPage() {
     <section>
       <div className="page-header row">
         <div>
-          <span className="eyebrow">Catalog</span>
-          <h1>Product Management</h1>
+          <span className="eyebrow">{t('products.eyebrow')}</span>
+          <h1>{t('products.title')}</h1>
         </div>
         <div className="header-actions">
           <button className="secondary-button" type="button" onClick={() => setCategoryManagerOpen(true)}>
-            Manage Categories
+            {t('products.manageCategories')}
           </button>
           <button className="primary-button icon-button" type="button" onClick={() => setEditorProductId('new')}>
-            <Plus size={18} /> New Product
+            <Plus size={18} /> {t('products.newProduct')}
           </button>
         </div>
       </div>
 
       <div className="filter-bar">
         <label>
-          Search
+          {t('common.search')}
           <input
-            placeholder="Tea, latte, cheesecake"
+            placeholder={t('products.placeholder')}
             value={filters.search ?? ''}
             onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
           />
         </label>
         <label>
-          Category
+          {t('products.category')}
           <select value={filters.categoryId ?? ''} onChange={(event) => setFilters((current) => ({ ...current, categoryId: event.target.value || undefined }))}>
-            <option value="">All categories</option>
+            <option value="">{t('products.allCategories')}</option>
             {categoriesQuery.data?.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
         </label>
         <label>
-          Kitchen
+          {t('products.kitchen')}
           <select value={filters.kitchenStationId ?? ''} onChange={(event) => setFilters((current) => ({ ...current, kitchenStationId: event.target.value || undefined }))}>
-            <option value="">All stations</option>
+            <option value="">{t('products.allStations')}</option>
             {activeKitchenStations.map((station) => (
               <option key={station.id} value={station.id}>{station.name}</option>
             ))}
           </select>
         </label>
         <label>
-          Status
+          {t('common.status')}
           <select value={filters.status ?? ''} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as ProductFilters['status'] }))}>
-            <option value="">All</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="">{t('common.all')}</option>
+            <option value="ACTIVE">{formatStatusLabel(t, 'ACTIVE')}</option>
+            <option value="INACTIVE">{formatStatusLabel(t, 'INACTIVE')}</option>
           </select>
         </label>
         <label>
-          Availability
+          {t('products.availability')}
           <select
             value={filters.availabilityStatus ?? ''}
             onChange={(event) => setFilters((current) => ({ ...current, availabilityStatus: event.target.value as ProductFilters['availabilityStatus'] }))}
           >
-            <option value="">All</option>
-            <option value="AVAILABLE">Available</option>
-            <option value="SOLD_OUT">Sold out</option>
+            <option value="">{t('common.all')}</option>
+            <option value="AVAILABLE">{formatStatusLabel(t, 'AVAILABLE')}</option>
+            <option value="SOLD_OUT">{formatStatusLabel(t, 'SOLD_OUT')}</option>
           </select>
         </label>
       </div>
 
-      {productsQuery.isLoading ? <LoadingState title="Loading products" /> : null}
-      {productsQuery.isError ? <ErrorState title="Products unavailable" description="Check the backend connection and try again." /> : null}
-      {productsQuery.data?.length === 0 ? <EmptyState title="No products yet" description="Create your first product or generate a menu with AI." /> : null}
+      {productsQuery.isLoading ? <LoadingState title={t('products.loading')} /> : null}
+      {productsQuery.isError ? <ErrorState title={t('products.errorTitle')} description={t('common.errorDescription')} /> : null}
+      {productsQuery.data?.length === 0 ? <EmptyState title={t('products.emptyTitle')} description={t('products.emptyBody')} /> : null}
       {productsQuery.data && productsQuery.data.length > 0 ? (
         <div className="table-card">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Kitchen</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Availability</th>
-                <th>Modifiers</th>
-                <th>Updated</th>
-                <th>Actions</th>
+                <th>{t('products.name')}</th>
+                <th>{t('products.category')}</th>
+                <th>{t('products.kitchen')}</th>
+                <th>{t('products.price')}</th>
+                <th>{t('common.status')}</th>
+                <th>{t('products.availability')}</th>
+                <th>{t('products.modifiers')}</th>
+                <th>{t('common.updated')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {productsQuery.data.map((product) => (
+              {pagination.pagedItems.map((product) => (
                 <tr key={product.id}>
                   <td>
                     <strong>{product.name}</strong>
                     {product.description ? <small>{product.description}</small> : null}
                   </td>
-                  <td>{product.categoryName ?? 'Menu'}</td>
-                  <td>{product.kitchenStation?.name ?? 'Default route'}</td>
+                  <td>{product.categoryName ?? t('products.menu')}</td>
+                  <td>{product.kitchenStation?.name ?? t('products.defaultRoute')}</td>
                   <td>{money.format(product.price)}</td>
-                  <td><span className={`status ${product.status.toLowerCase()}`}>{product.status}</span></td>
-                  <td><span className={`status ${product.availabilityStatus.toLowerCase().replace('_', '-')}`}>{product.availabilityStatus.replace('_', ' ')}</span></td>
+                  <td><span className={`status ${product.status.toLowerCase()}`}>{formatStatusLabel(t, product.status)}</span></td>
+                  <td><span className={`status ${product.availabilityStatus.toLowerCase().replace('_', '-')}`}>{formatStatusLabel(t, product.availabilityStatus)}</span></td>
                   <td>{product.modifierCount}</td>
                   <td>{new Date(product.updatedAt).toLocaleString()}</td>
                   <td>
                     <div className="table-actions">
-                      <button className="secondary-button" type="button" onClick={() => setEditorProductId(product.id)}>Edit</button>
+                      <button className="secondary-button" type="button" onClick={() => setEditorProductId(product.id)}>{t('common.edit')}</button>
                       <button
                         className="secondary-button"
                         type="button"
                         onClick={() => availabilityMutation.mutate({ id: product.id, availabilityStatus: product.availabilityStatus === 'SOLD_OUT' ? 'AVAILABLE' : 'SOLD_OUT' })}
                       >
-                        {product.availabilityStatus === 'SOLD_OUT' ? 'Restore' : 'Sold Out'}
+                        {product.availabilityStatus === 'SOLD_OUT' ? t('common.restore') : t('common.soldOutAction')}
                       </button>
                       <button
                         className="secondary-button"
                         type="button"
                         onClick={() => statusMutation.mutate({ id: product.id, status: product.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' })}
                       >
-                        {product.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                        {product.status === 'ACTIVE' ? t('common.disable') : t('common.enable')}
                       </button>
                     </div>
                   </td>
@@ -186,6 +191,7 @@ export function ProductsPage() {
               ))}
             </tbody>
           </table>
+          <Pagination {...pagination} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
         </div>
       ) : null}
 
@@ -214,6 +220,7 @@ function ProductEditor({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
   const isNew = productId === 'new';
   const productQuery = useQuery({ queryKey: ['admin', 'product', productId], queryFn: () => fetchProduct(productId), enabled: !isNew });
   const [form, setForm] = useState<ProductFormInput>(emptyProductForm);
@@ -238,50 +245,50 @@ function ProductEditor({
       <aside className="drawer">
         <div className="drawer-header">
           <div>
-            <span className="eyebrow">{isNew ? 'New Product' : 'Product Editor'}</span>
-            <h2>{isNew ? 'Create Product' : product?.name ?? 'Loading product'}</h2>
+            <span className="eyebrow">{isNew ? t('products.newProduct') : t('products.editor')}</span>
+            <h2>{isNew ? t('products.createProduct') : product?.name ?? t('products.loadingProduct')}</h2>
           </div>
           <button className="icon-button" type="button" onClick={onClose}><X size={18} /></button>
         </div>
-        {productQuery.isLoading ? <LoadingState title="Loading product detail" /> : null}
+        {productQuery.isLoading ? <LoadingState title={t('products.loadingDetail')} /> : null}
         <div className="editor-section">
-          <h3>Basic Information</h3>
+          <h3>{t('products.basicInfo')}</h3>
           <div className="editor-grid">
-            <label>Name<input value={visibleForm.name} onChange={(event) => updateField('name', event.target.value)} /></label>
-            <label>Price<input type="number" min="0" step="0.01" value={visibleForm.price} onChange={(event) => updateField('price', Number(event.target.value))} /></label>
+            <label>{t('products.name')}<input value={visibleForm.name} onChange={(event) => updateField('name', event.target.value)} /></label>
+            <label>{t('products.price')}<input type="number" min="0" step="0.01" value={visibleForm.price} onChange={(event) => updateField('price', Number(event.target.value))} /></label>
             <label>
-              Category
+              {t('products.category')}
               <select value={visibleForm.categoryId ?? ''} onChange={(event) => updateField('categoryId', event.target.value)}>
-                <option value="">Menu</option>
+                <option value="">{t('products.menu')}</option>
                 {activeCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
               </select>
             </label>
             <label>
-              Kitchen
+              {t('products.kitchen')}
               <select value={visibleForm.kitchenStationId ?? ''} onChange={(event) => updateField('kitchenStationId', event.target.value)}>
-                <option value="">Category/default route</option>
+                <option value="">{t('products.categoryDefaultRoute')}</option>
                 {activeKitchenStations.map((station) => <option key={station.id} value={station.id}>{station.name}</option>)}
               </select>
             </label>
             <label>
-              Status
+              {t('common.status')}
               <select value={visibleForm.status} onChange={(event) => updateField('status', event.target.value as ProductFormInput['status'])}>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
+                <option value="ACTIVE">{formatStatusLabel(t, 'ACTIVE')}</option>
+                <option value="INACTIVE">{formatStatusLabel(t, 'INACTIVE')}</option>
               </select>
             </label>
             <label>
-              Availability
+              {t('products.availability')}
               <select value={visibleForm.availabilityStatus} onChange={(event) => updateField('availabilityStatus', event.target.value as ProductFormInput['availabilityStatus'])}>
-                <option value="AVAILABLE">Available</option>
-                <option value="SOLD_OUT">Sold out</option>
+                <option value="AVAILABLE">{formatStatusLabel(t, 'AVAILABLE')}</option>
+                <option value="SOLD_OUT">{formatStatusLabel(t, 'SOLD_OUT')}</option>
               </select>
             </label>
-            <label className="span-2">Description<input value={visibleForm.description ?? ''} onChange={(event) => updateField('description', event.target.value)} /></label>
+            <label className="span-2">{t('products.description')}<input value={visibleForm.description ?? ''} onChange={(event) => updateField('description', event.target.value)} /></label>
           </div>
-          {saveMutation.isError ? <p className="form-error">Unable to save product. Check required fields and store permissions.</p> : null}
+          {saveMutation.isError ? <p className="form-error">{t('products.saveError')}</p> : null}
           <button className="primary-button" type="button" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-            {saveMutation.isPending ? 'Saving...' : 'Save Product'}
+            {saveMutation.isPending ? t('common.saving') : t('products.saveProduct')}
           </button>
         </div>
 
@@ -293,6 +300,7 @@ function ProductEditor({
 
 function ModifierEditor({ product }: { product: AdminProduct }) {
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
   const [groupForm, setGroupForm] = useState<ModifierGroupForm>({ name: '', required: true, selectionType: 'SINGLE', minSelect: 1, maxSelect: 1 });
   const addGroup = useMutation({
     mutationFn: () => createModifierGroup(product.id, groupForm),
@@ -305,20 +313,20 @@ function ModifierEditor({ product }: { product: AdminProduct }) {
 
   return (
     <div className="editor-section">
-      <h3>Modifiers</h3>
+      <h3>{t('products.modifiers')}</h3>
       <div className="modifier-create">
-        <input placeholder="Group name, e.g. Size" value={groupForm.name} onChange={(event) => setGroupForm((current) => ({ ...current, name: event.target.value }))} />
+        <input placeholder={t('products.groupNamePlaceholder')} value={groupForm.name} onChange={(event) => setGroupForm((current) => ({ ...current, name: event.target.value }))} />
         <select value={groupForm.selectionType} onChange={(event) => setGroupForm((current) => ({ ...current, selectionType: event.target.value as 'SINGLE' | 'MULTI', maxSelect: event.target.value === 'SINGLE' ? 1 : current.maxSelect }))}>
-          <option value="SINGLE">Single</option>
-          <option value="MULTI">Multi</option>
+          <option value="SINGLE">{t('products.single')}</option>
+          <option value="MULTI">{t('products.multi')}</option>
         </select>
         <select value={groupForm.required ? 'required' : 'optional'} onChange={(event) => setGroupForm((current) => ({ ...current, required: event.target.value === 'required', minSelect: event.target.value === 'required' ? Math.max(current.minSelect, 1) : 0 }))}>
-          <option value="required">Required</option>
-          <option value="optional">Optional</option>
+          <option value="required">{t('products.required')}</option>
+          <option value="optional">{t('products.optional')}</option>
         </select>
         <input type="number" min="0" value={groupForm.minSelect} onChange={(event) => setGroupForm((current) => ({ ...current, minSelect: Number(event.target.value) }))} />
         <input type="number" min="1" value={groupForm.maxSelect} onChange={(event) => setGroupForm((current) => ({ ...current, maxSelect: Number(event.target.value) }))} />
-        <button className="secondary-button" type="button" onClick={() => addGroup.mutate()} disabled={addGroup.isPending}>Add Group</button>
+        <button className="secondary-button" type="button" onClick={() => addGroup.mutate()} disabled={addGroup.isPending}>{t('products.addGroup')}</button>
       </div>
       <div className="modifier-list">
         {(product.modifierGroups ?? []).map((group) => <ModifierGroupCard key={group.id} productId={product.id} group={group} />)}
@@ -329,6 +337,7 @@ function ModifierEditor({ product }: { product: AdminProduct }) {
 
 function ModifierGroupCard({ productId, group }: { productId: string; group: AdminModifierGroup }) {
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
   const [name, setName] = useState(group.name);
   const [optionName, setOptionName] = useState('');
   const [priceDelta, setPriceDelta] = useState(0);
@@ -354,26 +363,27 @@ function ModifierGroupCard({ productId, group }: { productId: string; group: Adm
     <div className="modifier-card">
       <div className="modifier-card-header">
         <input value={name} onChange={(event) => setName(event.target.value)} />
-        <span className={`status ${group.status.toLowerCase()}`}>{group.status}</span>
+        <span className={`status ${group.status.toLowerCase()}`}>{formatStatusLabel(t, group.status)}</span>
       </div>
-      <p>{group.required ? 'Required' : 'Optional'} · {group.selectionType} · min {group.minSelect} · max {group.maxSelect}</p>
+      <p>{group.required ? t('products.required') : t('products.optional')} · {group.selectionType} · min {group.minSelect} · max {group.maxSelect}</p>
       <div className="table-actions">
-        <button className="secondary-button" type="button" onClick={() => saveGroup.mutate()}>Save Group</button>
-        <button className="secondary-button" type="button" onClick={() => toggleGroup.mutate()}>{group.status === 'ACTIVE' ? 'Disable' : 'Enable'}</button>
+        <button className="secondary-button" type="button" onClick={() => saveGroup.mutate()}>{t('products.saveGroup')}</button>
+        <button className="secondary-button" type="button" onClick={() => toggleGroup.mutate()}>{group.status === 'ACTIVE' ? t('common.disable') : t('common.enable')}</button>
       </div>
       <div className="option-list">
         {group.options.map((option) => <ModifierOptionRow key={option.id} option={option} onSaved={refresh} />)}
       </div>
       <div className="modifier-create option-create">
-        <input placeholder="Option name" value={optionName} onChange={(event) => setOptionName(event.target.value)} />
+        <input placeholder={t('products.optionName')} value={optionName} onChange={(event) => setOptionName(event.target.value)} />
         <input type="number" min="0" step="0.01" value={priceDelta} onChange={(event) => setPriceDelta(Number(event.target.value))} />
-        <button className="secondary-button" type="button" onClick={() => addOption.mutate()}>Add Option</button>
+        <button className="secondary-button" type="button" onClick={() => addOption.mutate()}>{t('products.addOption')}</button>
       </div>
     </div>
   );
 }
 
 function ModifierOptionRow({ option, onSaved }: { option: AdminModifierOption; onSaved: () => void }) {
+  const { t } = useAdminI18n();
   const [name, setName] = useState(option.name);
   const [priceDelta, setPriceDelta] = useState(option.priceDelta);
   const save = useMutation({ mutationFn: () => updateModifierOption(option.id, { name, priceDelta, status: option.status, sortOrder: option.sortOrder }), onSuccess: onSaved });
@@ -383,13 +393,13 @@ function ModifierOptionRow({ option, onSaved }: { option: AdminModifierOption; o
     <div className="option-row">
       <input value={name} onChange={(event) => setName(event.target.value)} />
       <input type="number" min="0" step="0.01" value={priceDelta} onChange={(event) => setPriceDelta(Number(event.target.value))} />
-      <span className={`status ${option.status.toLowerCase().replace('_', '-')}`}>{option.status.replace('_', ' ')}</span>
-      <button className="secondary-button" type="button" onClick={() => save.mutate()}>Save</button>
+      <span className={`status ${option.status.toLowerCase().replace('_', '-')}`}>{formatStatusLabel(t, option.status)}</span>
+      <button className="secondary-button" type="button" onClick={() => save.mutate()}>{t('common.save')}</button>
       <button className="secondary-button" type="button" onClick={() => status.mutate(option.status === 'SOLD_OUT' ? 'ACTIVE' : 'SOLD_OUT')}>
-        {option.status === 'SOLD_OUT' ? 'Restore' : 'Sold Out'}
+        {option.status === 'SOLD_OUT' ? t('common.restore') : t('common.soldOutAction')}
       </button>
       <button className="secondary-button" type="button" onClick={() => status.mutate(option.status === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE')}>
-        {option.status === 'INACTIVE' ? 'Enable' : 'Disable'}
+        {option.status === 'INACTIVE' ? t('common.enable') : t('common.disable')}
       </button>
     </div>
   );
@@ -405,6 +415,7 @@ function CategoryManager({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
   const [name, setName] = useState('');
   const create = useMutation({
     mutationFn: () => createCategory({ name }),
@@ -420,14 +431,14 @@ function CategoryManager({
       <aside className="drawer compact-drawer">
         <div className="drawer-header">
           <div>
-            <span className="eyebrow">Catalog</span>
-            <h2>Category Manager</h2>
+            <span className="eyebrow">{t('products.eyebrow')}</span>
+            <h2>{t('products.categoryManager')}</h2>
           </div>
           <button className="icon-button" type="button" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="modifier-create">
-          <input placeholder="Seasonal Drinks" value={name} onChange={(event) => setName(event.target.value)} />
-          <button className="primary-button" type="button" onClick={() => create.mutate()}>Create</button>
+          <input placeholder={t('products.categoryPlaceholder')} value={name} onChange={(event) => setName(event.target.value)} />
+          <button className="primary-button" type="button" onClick={() => create.mutate()}>{t('common.create')}</button>
         </div>
         <div className="category-list">
           {categories.map((category) => <CategoryRow key={category.id} activeKitchenStations={activeKitchenStations} category={category} onSaved={refresh} />)}
@@ -438,6 +449,7 @@ function CategoryManager({
 }
 
 function CategoryRow({ activeKitchenStations, category, onSaved }: { activeKitchenStations: KitchenStation[]; category: AdminCategory; onSaved: () => void }) {
+  const { t } = useAdminI18n();
   const [name, setName] = useState(category.name);
   const [defaultKitchenStationId, setDefaultKitchenStationId] = useState(category.defaultKitchenStation?.id ?? '');
   const save = useMutation({ mutationFn: () => updateCategory(category.id, { name, sortOrder: category.sortOrder, defaultKitchenStationId }), onSuccess: onSaved });
@@ -447,13 +459,13 @@ function CategoryRow({ activeKitchenStations, category, onSaved }: { activeKitch
     <div className="category-row">
       <input value={name} onChange={(event) => setName(event.target.value)} />
       <select value={defaultKitchenStationId} onChange={(event) => setDefaultKitchenStationId(event.target.value)}>
-        <option value="">Store default</option>
+        <option value="">{t('common.storeDefault')}</option>
         {activeKitchenStations.map((station) => <option key={station.id} value={station.id}>{station.name}</option>)}
       </select>
-      <span className={`status ${category.status.toLowerCase()}`}>{category.status}</span>
-      <span>{category.productCount} products</span>
-      <button className="secondary-button" type="button" onClick={() => save.mutate()}>Rename</button>
-      <button className="secondary-button" type="button" onClick={() => toggle.mutate()}>{category.status === 'ACTIVE' ? 'Disable' : 'Enable'}</button>
+      <span className={`status ${category.status.toLowerCase()}`}>{formatStatusLabel(t, category.status)}</span>
+      <span>{t('products.productCount', { count: category.productCount })}</span>
+      <button className="secondary-button" type="button" onClick={() => save.mutate()}>{t('products.rename')}</button>
+      <button className="secondary-button" type="button" onClick={() => toggle.mutate()}>{category.status === 'ACTIVE' ? t('common.disable') : t('common.enable')}</button>
     </div>
   );
 }

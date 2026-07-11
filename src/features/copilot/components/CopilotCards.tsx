@@ -1,6 +1,8 @@
 import type { CopilotChatResponse, CopilotStructuredMessage } from '../../../types/admin';
+import { useAdminI18n } from '../../../i18n';
 
 export function CopilotResponseCard({ response }: { response: CopilotChatResponse | CopilotStructuredMessage }) {
+  const { t } = useAdminI18n();
   return (
     <article className="copilot-response">
       <p>{response.answer}</p>
@@ -16,10 +18,10 @@ export function CopilotResponseCard({ response }: { response: CopilotChatRespons
           ))}
         </div>
       ) : null}
-      <CopilotList title="Drivers" items={response.drivers.map((item) => item.text)} />
-      <CopilotList title="Risks" items={response.risks.map((item) => item.text)} />
-      <CopilotList title="Recommendations" items={response.recommendations.map((item) => `${item.title}: ${item.description}`)} />
-      <CopilotList title="Limitations" items={response.limitations} />
+      <CopilotList title={t('ai.drivers')} items={response.drivers.map((item) => item.text)} />
+      <CopilotList title={t('ai.risks')} items={response.risks.map((item) => item.text)} />
+      <CopilotList title={t('ai.recommendations')} items={response.recommendations.map((item) => `${item.title}: ${item.description}`)} />
+      <CopilotList title={t('ai.limitations')} items={response.limitations} />
     </article>
   );
 }
@@ -33,4 +35,3 @@ function CopilotList({ items, title }: { title: string; items: string[] }) {
     </div>
   );
 }
-

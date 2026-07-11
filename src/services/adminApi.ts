@@ -6,6 +6,7 @@ import type {
   AdminCategory,
   AdminModifierGroup,
   AdminModifierOption,
+  AdminOrder,
   AdminProduct,
   AdminShift,
   CampaignDraft,
@@ -32,6 +33,11 @@ import type { StoreRole } from '../types/auth';
 
 export async function fetchDashboard() {
   const { data } = await apiClient.get<DashboardSummary>('/admin/dashboard');
+  return data;
+}
+
+export async function fetchOrders() {
+  const { data } = await apiClient.get<AdminOrder[]>('/checkout/orders');
   return data;
 }
 

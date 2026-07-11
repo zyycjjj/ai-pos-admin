@@ -1,34 +1,36 @@
 import { ErrorState, LoadingState } from '../components/PageState';
 import { CopilotPanel } from '../features/copilot/components/CopilotPanel';
 import { useAiCopilotPage } from '../features/copilot/hooks/useAiCopilotPage';
+import { useAdminI18n } from '../i18n';
 
 export function AiCenterPage() {
+  const { t } = useAdminI18n();
   const vm = useAiCopilotPage();
   const dailyBrief = vm.queries.dailyBriefQuery.data;
   const isLoading = vm.queries.dailyBriefQuery.isLoading && !dailyBrief;
   const suggestedQuestions = dailyBrief?.suggestedQuestions ?? [
-    'How is my business doing today?',
-    'Which products are underperforming?',
-    'Why are refunds increasing?',
+    t('ai.q1'),
+    t('ai.q2'),
+    t('ai.q3'),
   ];
 
   return (
     <section className="copilot-page">
       <div className="page-header row">
         <div>
-          <span className="eyebrow">Metric-grounded AI</span>
-          <h1>AI Business Copilot</h1>
+          <span className="eyebrow">{t('ai.eyebrow')}</span>
+          <h1>{t('ai.title')}</h1>
         </div>
-        <span className="analytics-period">{dailyBrief?.source === 'deepseek' ? 'DeepSeek' : 'Deterministic fallback'}</span>
+        <span className="analytics-period">{dailyBrief?.source === 'deepseek' ? 'DeepSeek' : t('ai.fallback')}</span>
       </div>
-      {isLoading ? <LoadingState title="Preparing business context" /> : null}
-      {vm.queries.dailyBriefQuery.isError ? <ErrorState title="Copilot unavailable" description="Analytics context could not be loaded. No business data was changed." /> : null}
+      {isLoading ? <LoadingState title={t('ai.loading')} /> : null}
+      {vm.queries.dailyBriefQuery.isError ? <ErrorState title={t('ai.errorTitle')} description={t('ai.errorBody')} /> : null}
       {!isLoading && !vm.queries.dailyBriefQuery.isError ? (
         <CopilotPanel
           conversations={vm.queries.conversationsQuery.data ?? []}
           dailyBrief={dailyBrief}
           drafts={vm.queries.draftsQuery.data ?? []}
-          error={vm.mutation.isError ? 'Copilot could not answer this question. No business data was changed.' : null}
+          error={vm.mutation.isError ? t('ai.answerError') : null}
           isLoading={isLoading}
           isSending={vm.mutation.isPending}
           message={vm.state.message}

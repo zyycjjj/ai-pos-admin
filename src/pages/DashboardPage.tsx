@@ -2,31 +2,33 @@ import { useQuery } from '@tanstack/react-query';
 
 import { ErrorState, LoadingState } from '../components/PageState';
 import { fetchDashboard } from '../services/adminApi';
+import { useAdminI18n } from '../i18n';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export function DashboardPage() {
+  const { t } = useAdminI18n();
   const query = useQuery({ queryKey: ['admin', 'dashboard'], queryFn: fetchDashboard });
 
   if (query.isLoading) {
-    return <LoadingState title="Loading dashboard" />;
+    return <LoadingState title={t('dashboard.loading')} />;
   }
   if (query.isError || !query.data) {
-    return <ErrorState title="Dashboard unavailable" description="Check the backend connection and try again." />;
+    return <ErrorState title={t('dashboard.errorTitle')} description={t('common.errorDescription')} />;
   }
 
   const cards = [
-    { label: 'Today Sales', value: money.format(query.data.todaySales) },
-    { label: 'Orders Count', value: String(query.data.ordersCount) },
-    { label: 'Avg Ticket', value: money.format(query.data.avgTicket) },
-    { label: 'Active Products', value: String(query.data.activeProducts) },
+    { label: t('dashboard.todaySales'), value: money.format(query.data.todaySales) },
+    { label: t('dashboard.ordersCount'), value: String(query.data.ordersCount) },
+    { label: t('dashboard.avgTicket'), value: money.format(query.data.avgTicket) },
+    { label: t('dashboard.activeProducts'), value: String(query.data.activeProducts) },
   ];
 
   return (
     <section>
       <div className="page-header">
-        <span className="eyebrow">Store overview</span>
-        <h1>Dashboard</h1>
+        <span className="eyebrow">{t('dashboard.eyebrow')}</span>
+        <h1>{t('dashboard.title')}</h1>
       </div>
       <div className="metric-grid">
         {cards.map((card) => (
