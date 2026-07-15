@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Printer as PrinterIcon, RotateCcw, Send, Trash2 } from 'lucide-react';
+import { FilterX, Printer as PrinterIcon, RotateCcw, Send, Trash2 } from 'lucide-react';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { Pagination } from '../components/Pagination';
@@ -48,15 +48,21 @@ export function PrintersPage() {
   const [printerForm, setPrinterForm] = useState<PrinterForm>(emptyPrinterForm);
   const [routeForm, setRouteForm] = useState<PrinterRouteInput>({ printerId: '', routeType: 'STORE_DEFAULT', targetId: '', documentType: 'CUSTOMER_RECEIPT' });
   const [jobFilters, setJobFilters] = useState<{ status?: PrintJobStatus | ''; printerId?: string; documentType?: PrintDocumentType | '' }>({});
+  const [hideLegacyLocalFailures, setHideLegacyLocalFailures] = useState(true);
 
   const printersQuery = useQuery({ queryKey: ['admin', 'printers'], queryFn: fetchPrinters });
   const routesQuery = useQuery({ queryKey: ['admin', 'printer-routes'], queryFn: fetchPrinterRoutes });
   const jobsQuery = useQuery({ queryKey: ['admin', 'print-jobs', jobFilters], queryFn: () => fetchPrintJobs({ ...jobFilters, take: 80 }) });
-  const jobPagination = usePagination(jobsQuery.data, 10);
   const stationsQuery = useQuery({ queryKey: ['admin', 'kitchen', 'stations'], queryFn: fetchKitchenStations });
 
   const activePrinters = useMemo(() => (printersQuery.data ?? []).filter((printer) => printer.status === 'ACTIVE'), [printersQuery.data]);
   const activeStations = useMemo(() => (stationsQuery.data ?? []).filter((station) => station.status === 'ACTIVE'), [stationsQuery.data]);
+  const visibleJobs = useMemo(
+    () => (jobsQuery.data ?? []).filter((job) => !hideLegacyLocalFailures || !isLegacyLocalLanFailure(job)),
+    [hideLegacyLocalFailures, jobsQuery.data],
+  );
+  const hiddenLegacyJobCount = (jobsQuery.data?.length ?? 0) - visibleJobs.length;
+  const jobPagination = usePagination(visibleJobs, 10);
 
   const refreshPrinters = () => void queryClient.invalidateQueries({ queryKey: ['admin', 'printers'] });
   const refreshRoutes = () => void queryClient.invalidateQueries({ queryKey: ['admin', 'printer-routes'] });
@@ -160,6 +166,7 @@ export function PrintersPage() {
                 <div>
                   <strong>{printer.name}</strong>
                   <small>{printer.code} · {printer.type} · {printer.address}</small>
+                  {isLocalLanPrinter(printer) ? <small>{t('printers.localLanPrinterHint')}</small> : null}
                 </div>
                 <span className={`status-pill ${printer.status === 'ACTIVE' ? 'success' : ''}`}>{formatStatusLabel(t, printer.status)}</span>
                 <div className="table-actions">
@@ -249,10 +256,19 @@ export function PrintersPage() {
               {documentTypes.map((type) => <option key={type} value={type}>{formatEnum(type)}</option>)}
             </select>
           </label>
+          <label className="compact-check">
+            <input type="checkbox" checked={hideLegacyLocalFailures} onChange={(event) => setHideLegacyLocalFailures(event.target.checked)} />
+            {t('printers.hideLegacyLocalFailures')}
+          </label>
+          {hiddenLegacyJobCount > 0 ? (
+            <span className="status-pill">
+              <FilterX size={14} /> {t('printers.hiddenLegacyJobs').replace('{count}', String(hiddenLegacyJobCount))}
+            </span>
+          ) : null}
         </div>
         {jobsQuery.isLoading ? <LoadingState title={t('printers.loadingJobs')} /> : null}
         {jobsQuery.isError ? <ErrorState title={t('printers.jobsError')} description={t('common.errorDescription')} /> : null}
-        {jobsQuery.data?.length === 0 ? <EmptyState title={t('printers.emptyJobs')} description={t('printers.emptyJobsBody')} /> : null}
+        {visibleJobs.length === 0 && !jobsQuery.isLoading ? <EmptyState title={t('printers.emptyJobs')} description={t('printers.emptyJobsBody')} /> : null}
         <table>
           <thead>
             <tr>
@@ -277,17 +293,23 @@ export function PrintersPage() {
 
 function PrintJobRow({ busy, job, onRetry }: { busy: boolean; job: PrintJob; onRetry: () => void }) {
   const { t } = useAdminI18n();
+  const legacyLocalFailure = isLegacyLocalLanFailure(job);
+  const errorMessage = getFriendlyPrintError(job.lastError, legacyLocalFailure, t);
   return (
     <tr>
       <td>
         <strong>{formatEnum(job.documentType)}</strong>
         <small>{formatEnum(job.reason)} · {job.byteLength ? `${job.byteLength} ${t('common.bytes')}` : t('common.notRendered')}</small>
+        {legacyLocalFailure ? <small>{t('printers.legacyLocalJob')}</small> : null}
       </td>
       <td>
         <span className={`status-pill ${job.status === 'SUCCEEDED' ? 'success' : job.status === 'FAILED' ? 'danger' : ''}`}>{formatStatusLabel(t, job.status)}</span>
-        {job.lastError ? <small>{job.lastError}</small> : null}
+        {errorMessage ? <small>{errorMessage}</small> : null}
       </td>
-      <td>{job.printer?.name ?? t('common.unresolved')}</td>
+      <td>
+        {job.printer?.name ?? t('common.unresolved')}
+        {job.printer && isLocalLanPrinter(job.printer) ? <small>{t('printers.localLanPrinterHint')}</small> : null}
+      </td>
       <td>
         <strong>{formatEnum(job.referenceType)}</strong>
         <small>{job.referenceId}</small>
@@ -344,4 +366,25 @@ function findStationName(stations: Array<{ id: string; name: string }>, id: stri
 
 function formatEnum(value: string) {
   return formatEnumLabel(value);
+}
+
+function isLocalLanPrinter(printer: Printer) {
+  return printer.connectionType === 'LAN' && printer.host === '127.0.0.1' && printer.port === 19100;
+}
+
+function isLegacyLocalLanFailure(job: PrintJob) {
+  return job.status === 'FAILED' && Boolean(job.printer && isLocalLanPrinter(job.printer)) && Boolean(job.lastError?.includes('ECONNREFUSED'));
+}
+
+function getFriendlyPrintError(error: string | null, legacyLocalFailure: boolean, t: (key: string) => string) {
+  if (!error) {
+    return null;
+  }
+  if (legacyLocalFailure) {
+    return t('printers.legacyLocalFailureBody');
+  }
+  if (error.includes('ECONNREFUSED')) {
+    return t('printers.connectionRefusedBody');
+  }
+  return error;
 }
