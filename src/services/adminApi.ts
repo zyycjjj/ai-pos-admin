@@ -366,6 +366,31 @@ export async function fetchCampaigns() {
   return data;
 }
 
+export type CampaignInput = {
+  name: string;
+  goal?: string;
+  type: CampaignDraft['type'];
+  discountType?: 'percentage' | 'fixed_amount';
+  discountValue: number;
+  thresholdAmount?: number;
+  promoCode?: string;
+  productId?: string;
+  categoryName?: string;
+  stackingPolicy?: CampaignDraft['stackingPolicy'];
+  priority?: number;
+  usageLimit?: number;
+};
+
+export async function createCampaign(input: CampaignInput) {
+  const { data } = await apiClient.post<CampaignDraft>('/admin/campaigns', input);
+  return data;
+}
+
+export async function updateCampaignStatus(id: string, status: CampaignDraft['status']) {
+  const { data } = await apiClient.patch<CampaignDraft>(`/admin/campaigns/${id}/status`, { status });
+  return data;
+}
+
 export async function fetchAiDrafts() {
   const { data } = await apiClient.get<AiDraft[]>('/admin/ai-drafts');
   return data;

@@ -259,9 +259,20 @@ export type CampaignDraft = {
   id: string;
   name: string;
   goal: string | null;
+  type: 'ORDER_DISCOUNT' | 'THRESHOLD_DISCOUNT' | 'ITEM_DISCOUNT' | 'PROMO_CODE' | 'BUY_X_GET_Y';
+  discountType: 'percentage' | 'fixed_amount' | string | null;
+  discountValue: number | null;
+  thresholdAmount: number | null;
+  promoCode: string | null;
+  productId: string | null;
+  categoryName: string | null;
+  stackingPolicy: 'BEST_ONLY' | 'STACKABLE' | 'EXCLUSIVE';
+  usageLimit: number | null;
+  usageCount: number;
+  discountTotal: number;
   timeWindow: string | null;
   category: string | null;
-  status: string;
+  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED' | 'ARCHIVED';
   createdAt: string;
 };
 
