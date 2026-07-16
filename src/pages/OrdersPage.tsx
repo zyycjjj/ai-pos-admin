@@ -35,6 +35,7 @@ export function OrdersPage() {
               <tr>
                 <th>{t('orders.order')}</th>
                 <th>{t('orders.type')}</th>
+                <th>{t('orders.table')}</th>
                 <th>{t('common.created')}</th>
                 <th>{t('orders.items')}</th>
                 <th>{t('orders.breakdown')}</th>
@@ -49,6 +50,10 @@ export function OrdersPage() {
                 <tr key={order.id}>
                   <td><strong>{order.orderNumber}</strong></td>
                   <td>{formatStatusLabel(t, order.orderType)}</td>
+                  <td>
+                    <div>{order.tableName ?? '-'}</div>
+                    {order.guestCount ? <small>{t('orders.guests')}: {order.guestCount}</small> : null}
+                  </td>
                   <td>{new Date(order.createdAt).toLocaleString()}</td>
                   <td>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
                   <td>

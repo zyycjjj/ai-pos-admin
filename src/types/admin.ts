@@ -56,6 +56,29 @@ export type BusinessDay = {
   notes: string | null;
 };
 
+export type DiningArea = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DiningTable = {
+  id: string;
+  areaId: string;
+  areaName: string;
+  name: string;
+  seats: number;
+  status: 'AVAILABLE' | 'OCCUPIED' | 'DIRTY' | 'RESERVED' | 'INACTIVE';
+  sortOrder: number;
+  currentOrderId: string | null;
+  currentOrder: AdminOrder | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type StaffMember = {
   id: string;
   userId: string;
@@ -400,6 +423,9 @@ export type AdminOrder = {
   orderNumber: string;
   pickupNumber: string | null;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'PICKUP';
+  tableId: string | null;
+  tableName: string | null;
+  guestCount: number | null;
   status: string;
   printStatus: string;
   paymentMethod: string | null;

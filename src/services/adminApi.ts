@@ -10,6 +10,8 @@ import type {
   AdminProduct,
   AdminShift,
   BusinessDay,
+  DiningArea,
+  DiningTable,
   CampaignDraft,
   CopilotChatResponse,
   CopilotConversationDetail,
@@ -83,6 +85,26 @@ export async function fetchShifts() {
 
 export async function fetchBusinessDays() {
   const { data } = await apiClient.get<BusinessDay[]>('/business-day');
+  return data;
+}
+
+export async function fetchDiningAreas() {
+  const { data } = await apiClient.get<DiningArea[]>('/admin/dining-areas');
+  return data;
+}
+
+export async function createDiningArea(input: { name: string; sortOrder?: number; status?: 'ACTIVE' | 'INACTIVE' }) {
+  const { data } = await apiClient.post<DiningArea>('/admin/dining-areas', input);
+  return data;
+}
+
+export async function fetchDiningTables() {
+  const { data } = await apiClient.get<DiningTable[]>('/admin/dining-tables');
+  return data;
+}
+
+export async function createDiningTable(input: { areaId: string; name: string; seats?: number; sortOrder?: number; status?: DiningTable['status'] }) {
+  const { data } = await apiClient.post<DiningTable>('/admin/dining-tables', input);
   return data;
 }
 

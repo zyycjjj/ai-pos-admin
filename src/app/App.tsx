@@ -14,6 +14,7 @@ import { PrintersPage } from '../pages/PrintersPage';
 import { ProductsPage } from '../pages/ProductsPage';
 import { ShiftsPage } from '../pages/ShiftsPage';
 import { StaffPage } from '../pages/StaffPage';
+import { TablesPage } from '../pages/TablesPage';
 import { useAuthStore } from '../stores/authStore';
 import { AdminI18nProvider } from '../i18n';
 
@@ -50,6 +51,7 @@ export function App() {
               <Route path="/shifts" element={<ShiftsPage />} />
               <Route path="/kitchen" element={<KitchenPage />} />
               <Route path="/printers" element={<PrintersPage />} />
+              <Route path="/tables" element={<TablesPage />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
