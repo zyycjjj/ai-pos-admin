@@ -443,7 +443,15 @@ export type AdminOrder = {
   total: number;
   refundedTotal: number;
   heldAt: string | null;
+  openedAt?: string | null;
+  closedAt?: string | null;
   itemCount?: number;
   items: Array<{ id: string; quantity: number }>;
+  auditLogs?: Array<{
+    id: string;
+    action: 'CANCELLED' | 'VOIDED' | 'REFUNDED' | 'HELD' | 'RESUMED' | 'TABLE_OPENED' | 'TABLE_TRANSFERRED' | 'TABLE_MERGED' | 'BILL_SPLIT' | 'TABLE_CLEARED';
+    reason: string;
+    createdAt: string;
+  }>;
   createdAt: string;
 };

@@ -43,6 +43,7 @@ export function OrdersPage() {
                 <th>{t('common.status')}</th>
                 <th>{t('orders.payment')}</th>
                 <th>{t('orders.print')}</th>
+                <th>{t('orders.operations')}</th>
               </tr>
             </thead>
             <tbody>
@@ -67,6 +68,11 @@ export function OrdersPage() {
                   <td><span className="status-pill">{formatStatusLabel(t, order.status)}</span></td>
                   <td>{order.paymentMethod ?? '-'}</td>
                   <td>{formatStatusLabel(t, order.printStatus)}</td>
+                  <td>
+                    {(order.auditLogs ?? []).filter((log) => log.action === 'TABLE_MERGED' || log.action === 'BILL_SPLIT' || log.action === 'TABLE_TRANSFERRED').slice(0, 2).map((log) => (
+                      <div key={log.id}><small>{formatStatusLabel(t, log.action)}: {log.reason}</small></div>
+                    ))}
+                  </td>
                 </tr>
               ))}
             </tbody>

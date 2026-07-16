@@ -16,6 +16,9 @@ export function TablesPage() {
   const [tableName, setTableName] = useState('');
   const [seats, setSeats] = useState('2');
   const [areaId, setAreaId] = useState('');
+  const [areaFilter, setAreaFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortMode, setSortMode] = useState<'AREA' | 'STATUS' | 'OPENED_AT'>('AREA');
 
   const createArea = useMutation({
     mutationFn: createDiningArea,
@@ -36,7 +39,15 @@ export function TablesPage() {
   const areas = areasQuery.data ?? [];
   const tables = tablesQuery.data ?? [];
   const selectedAreaId = areaId || areas[0]?.id || '';
-  const grouped = useMemo(() => areas.map((area) => ({ area, tables: tables.filter((table) => table.areaId === area.id) })), [areas, tables]);
+  const filteredTables = useMemo(() => {
+    const visible = tables.filter((table) => (areaFilter === 'ALL' || table.areaId === areaFilter) && (statusFilter === 'ALL' || table.status === statusFilter));
+    return [...visible].sort((left, right) => {
+      if (sortMode === 'STATUS') return left.status.localeCompare(right.status) || left.areaName.localeCompare(right.areaName) || left.sortOrder - right.sortOrder;
+      if (sortMode === 'OPENED_AT') return Date.parse(right.currentOrder?.openedAt ?? '0') - Date.parse(left.currentOrder?.openedAt ?? '0');
+      return left.areaName.localeCompare(right.areaName) || left.sortOrder - right.sortOrder || left.name.localeCompare(right.name);
+    });
+  }, [areaFilter, sortMode, statusFilter, tables]);
+  const grouped = useMemo(() => areas.map((area) => ({ area, tables: filteredTables.filter((table) => table.areaId === area.id) })).filter((group) => areaFilter === 'ALL' || group.area.id === areaFilter), [areaFilter, areas, filteredTables]);
 
   if (areasQuery.isLoading || tablesQuery.isLoading) return <LoadingState title={t('tables.loading')} />;
   if (areasQuery.isError || tablesQuery.isError) return <ErrorState title={t('tables.errorTitle')} description={t('common.errorDescription')} />;
@@ -46,6 +57,33 @@ export function TablesPage() {
       <div className="page-header">
         <span className="eyebrow">{t('tables.eyebrow')}</span>
         <h1>{t('tables.title')}</h1>
+      </div>
+
+      <div className="table-card">
+        <div className="form-grid">
+          <label>
+            {t('tables.areaFilter')}
+            <select value={areaFilter} onChange={(event) => setAreaFilter(event.target.value)}>
+              <option value="ALL">{t('common.all')}</option>
+              {areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
+            </select>
+          </label>
+          <label>
+            {t('tables.statusFilter')}
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="ALL">{t('common.all')}</option>
+              {['AVAILABLE', 'OCCUPIED', 'DIRTY', 'RESERVED', 'INACTIVE'].map((status) => <option key={status} value={status}>{formatStatusLabel(t, status)}</option>)}
+            </select>
+          </label>
+          <label>
+            {t('tables.sort')}
+            <select value={sortMode} onChange={(event) => setSortMode(event.target.value as typeof sortMode)}>
+              <option value="AREA">{t('tables.sortArea')}</option>
+              <option value="STATUS">{t('tables.sortStatus')}</option>
+              <option value="OPENED_AT">{t('tables.sortOpenedAt')}</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="settings-grid">
@@ -103,6 +141,8 @@ export function TablesPage() {
                   <th>{t('tables.seats')}</th>
                   <th>{t('common.status')}</th>
                   <th>{t('tables.currentOrder')}</th>
+                  <th>{t('tables.guests')}</th>
+                  <th>{t('tables.openedAt')}</th>
                   <th>{t('orders.total')}</th>
                 </tr>
               </thead>
@@ -113,6 +153,8 @@ export function TablesPage() {
                     <td>{table.seats}</td>
                     <td><span className={`status-pill ${table.status === 'AVAILABLE' ? 'success' : ''}`}>{formatStatusLabel(t, table.status)}</span></td>
                     <td>{table.currentOrder?.orderNumber ?? '-'}</td>
+                    <td>{table.currentOrder?.guestCount ?? '-'}</td>
+                    <td>{table.currentOrder?.openedAt ? new Date(table.currentOrder.openedAt).toLocaleString() : '-'}</td>
                     <td>{table.currentOrder ? money.format(table.currentOrder.total) : '-'}</td>
                   </tr>
                 ))}

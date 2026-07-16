@@ -98,6 +98,7 @@ const en: Dictionary = {
   'orders.tax': 'Tax',
   'orders.service': 'Service',
   'orders.tip': 'Tip',
+  'orders.operations': 'Operations',
 
   'tables.eyebrow': 'Dining room',
   'tables.title': 'Tables',
@@ -113,6 +114,14 @@ const en: Dictionary = {
   'tables.emptyAreas': 'Create a dining area before adding tables.',
   'tables.emptyTables': 'No tables in this area.',
   'tables.currentOrder': 'Current order',
+  'tables.areaFilter': 'Area filter',
+  'tables.statusFilter': 'Status filter',
+  'tables.sort': 'Sort',
+  'tables.sortArea': 'Area / table',
+  'tables.sortStatus': 'Status',
+  'tables.sortOpenedAt': 'Opened time',
+  'tables.guests': 'Guests',
+  'tables.openedAt': 'Opened at',
 
   'products.eyebrow': 'Catalog',
   'products.title': 'Product Management',
@@ -353,6 +362,11 @@ const en: Dictionary = {
   'status.DINE_IN': 'Dine in',
   'status.TAKEAWAY': 'Takeaway',
   'status.PICKUP': 'Pickup',
+  'status.TABLE_OPENED': 'Table opened',
+  'status.TABLE_TRANSFERRED': 'Table transferred',
+  'status.TABLE_MERGED': 'Table merged',
+  'status.BILL_SPLIT': 'Bill split',
+  'status.TABLE_CLEARED': 'Table cleared',
 };
 
 const zh: Dictionary = {
@@ -448,6 +462,7 @@ const zh: Dictionary = {
   'orders.tax': '税费',
   'orders.service': '服务费',
   'orders.tip': '小费',
+  'orders.operations': '操作记录',
 
   'tables.eyebrow': '堂食区域',
   'tables.title': '桌台',
@@ -463,6 +478,14 @@ const zh: Dictionary = {
   'tables.emptyAreas': '请先创建堂食区域，再添加桌台。',
   'tables.emptyTables': '该区域暂无桌台。',
   'tables.currentOrder': '当前订单',
+  'tables.areaFilter': '区域筛选',
+  'tables.statusFilter': '状态筛选',
+  'tables.sort': '排序',
+  'tables.sortArea': '区域 / 桌台',
+  'tables.sortStatus': '状态',
+  'tables.sortOpenedAt': '开台时间',
+  'tables.guests': '人数',
+  'tables.openedAt': '开台时间',
 
   'products.eyebrow': '商品目录',
   'products.title': '商品管理',
@@ -703,6 +726,11 @@ const zh: Dictionary = {
   'status.DINE_IN': '堂食',
   'status.TAKEAWAY': '打包',
   'status.PICKUP': '自提',
+  'status.TABLE_OPENED': '开台',
+  'status.TABLE_TRANSFERRED': '换台',
+  'status.TABLE_MERGED': '并台',
+  'status.BILL_SPLIT': '拆单',
+  'status.TABLE_CLEARED': '清台',
 };
 
 const dictionaries: Record<AdminLocale, Dictionary> = { en, 'zh-CN': zh };
