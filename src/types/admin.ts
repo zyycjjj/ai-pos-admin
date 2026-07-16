@@ -43,6 +43,19 @@ export type AdminShift = {
   movements: AdminCashMovement[];
 };
 
+export type BusinessDay = {
+  id: string;
+  status: 'OPEN' | 'CLOSED';
+  businessDate: string;
+  openedAt: string;
+  closedAt: string | null;
+  orderCount: number;
+  grossSales: number;
+  refundTotal: number;
+  netSales: number;
+  notes: string | null;
+};
+
 export type StaffMember = {
   id: string;
   userId: string;
@@ -386,12 +399,24 @@ export type AdminOrder = {
   id: string;
   orderNumber: string;
   pickupNumber: string | null;
+  orderType: 'DINE_IN' | 'TAKEAWAY' | 'PICKUP';
   status: string;
   printStatus: string;
   paymentMethod: string | null;
   currency: string;
+  subtotal: number;
+  adjustment: number;
+  adjustmentType: string | null;
+  adjustmentValue: number | null;
+  discountReason: string | null;
+  taxRate: number;
+  tax: number;
+  serviceChargeRate: number;
+  serviceCharge: number;
+  tip: number;
   total: number;
   refundedTotal: number;
+  heldAt: string | null;
   itemCount?: number;
   items: Array<{ id: string; quantity: number }>;
   createdAt: string;

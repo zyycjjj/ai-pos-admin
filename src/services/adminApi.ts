@@ -9,6 +9,7 @@ import type {
   AdminOrder,
   AdminProduct,
   AdminShift,
+  BusinessDay,
   CampaignDraft,
   CopilotChatResponse,
   CopilotConversationDetail,
@@ -77,6 +78,11 @@ export async function fetchStaff() {
 
 export async function fetchShifts() {
   const { data } = await apiClient.get<AdminShift[]>('/admin/shifts');
+  return data;
+}
+
+export async function fetchBusinessDays() {
+  const { data } = await apiClient.get<BusinessDay[]>('/business-day');
   return data;
 }
 

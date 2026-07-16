@@ -4,13 +4,14 @@ import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { Pagination } from '../components/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { formatStatusLabel, useAdminI18n } from '../i18n';
-import { fetchShifts } from '../services/adminApi';
+import { fetchBusinessDays, fetchShifts } from '../services/adminApi';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export function ShiftsPage() {
   const { t } = useAdminI18n();
   const query = useQuery({ queryKey: ['admin', 'shifts'], queryFn: fetchShifts });
+  const businessDaysQuery = useQuery({ queryKey: ['admin', 'business-days'], queryFn: fetchBusinessDays });
   const pagination = usePagination(query.data, 10);
 
   if (query.isLoading) {
@@ -25,6 +26,39 @@ export function ShiftsPage() {
       <div className="page-header">
         <span className="eyebrow">{t('shifts.eyebrow')}</span>
         <h1>{t('shifts.title')}</h1>
+      </div>
+
+      <h2>{t('businessDay.title')}</h2>
+      <div className="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>{t('businessDay.date')}</th>
+              <th>{t('common.status')}</th>
+              <th>{t('businessDay.orders')}</th>
+              <th>{t('businessDay.gross')}</th>
+              <th>{t('businessDay.refunds')}</th>
+              <th>{t('businessDay.net')}</th>
+              <th>{t('shifts.opened')}</th>
+              <th>{t('shifts.closed')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(businessDaysQuery.data ?? []).map((day) => (
+              <tr key={day.id}>
+                <td>{day.businessDate}</td>
+                <td><span className={`status-pill ${day.status === 'OPEN' ? 'success' : ''}`}>{formatStatusLabel(t, day.status)}</span></td>
+                <td>{day.orderCount}</td>
+                <td>{money.format(day.grossSales)}</td>
+                <td>{money.format(day.refundTotal)}</td>
+                <td>{money.format(day.netSales)}</td>
+                <td>{new Date(day.openedAt).toLocaleString()}</td>
+                <td>{day.closedAt ? new Date(day.closedAt).toLocaleString() : '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!businessDaysQuery.isLoading && (businessDaysQuery.data ?? []).length === 0 ? <EmptyState title={t('businessDay.empty')} /> : null}
       </div>
 
       {query.data.length === 0 ? <EmptyState title={t('shifts.emptyTitle')} /> : null}

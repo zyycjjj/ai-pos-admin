@@ -88,6 +88,13 @@ const en: Dictionary = {
   'orders.total': 'Total',
   'orders.payment': 'Payment',
   'orders.print': 'Print',
+  'orders.type': 'Type',
+  'orders.breakdown': 'Breakdown',
+  'orders.subtotal': 'Subtotal',
+  'orders.discount': 'Discount',
+  'orders.tax': 'Tax',
+  'orders.service': 'Service',
+  'orders.tip': 'Tip',
 
   'products.eyebrow': 'Catalog',
   'products.title': 'Product Management',
@@ -143,6 +150,13 @@ const en: Dictionary = {
   'shifts.expected': 'Expected',
   'shifts.actual': 'Actual',
   'shifts.variance': 'Variance',
+  'businessDay.title': 'Business Day',
+  'businessDay.date': 'Business date',
+  'businessDay.orders': 'Orders',
+  'businessDay.gross': 'Gross',
+  'businessDay.refunds': 'Refunds',
+  'businessDay.net': 'Net',
+  'businessDay.empty': 'No business days yet',
 
   'kitchen.eyebrow': 'Kitchen operations',
   'kitchen.title': 'Kitchen',
@@ -292,6 +306,7 @@ const en: Dictionary = {
   'forbidden.back': 'Back to login',
 
   'status.OPEN': 'Open',
+  'status.HELD': 'Held',
   'status.PAID': 'Paid',
   'status.CANCELLED': 'Cancelled',
   'status.VOIDED': 'Voided',
@@ -314,6 +329,9 @@ const en: Dictionary = {
   'status.MANAGER': 'Manager',
   'status.CASHIER': 'Cashier',
   'status.STAFF': 'Staff',
+  'status.DINE_IN': 'Dine in',
+  'status.TAKEAWAY': 'Takeaway',
+  'status.PICKUP': 'Pickup',
 };
 
 const zh: Dictionary = {
@@ -399,6 +417,13 @@ const zh: Dictionary = {
   'orders.total': '合计',
   'orders.payment': '支付',
   'orders.print': '打印',
+  'orders.type': '订单类型',
+  'orders.breakdown': '金额明细',
+  'orders.subtotal': '小计',
+  'orders.discount': '折扣',
+  'orders.tax': '税费',
+  'orders.service': '服务费',
+  'orders.tip': '小费',
 
   'products.eyebrow': '商品目录',
   'products.title': '商品管理',
@@ -454,6 +479,13 @@ const zh: Dictionary = {
   'shifts.expected': '应有现金',
   'shifts.actual': '实点现金',
   'shifts.variance': '差异',
+  'businessDay.title': '营业日',
+  'businessDay.date': '营业日期',
+  'businessDay.orders': '订单数',
+  'businessDay.gross': '销售额',
+  'businessDay.refunds': '退款',
+  'businessDay.net': '净销售额',
+  'businessDay.empty': '暂无营业日',
 
   'kitchen.eyebrow': '后厨运营',
   'kitchen.title': '后厨',
@@ -603,6 +635,7 @@ const zh: Dictionary = {
   'forbidden.back': '返回登录',
 
   'status.OPEN': '未结账',
+  'status.HELD': '已挂单',
   'status.PAID': '已支付',
   'status.CANCELLED': '已取消',
   'status.VOIDED': '已作废',
@@ -625,6 +658,9 @@ const zh: Dictionary = {
   'status.MANAGER': '店长',
   'status.CASHIER': '收银员',
   'status.STAFF': '员工',
+  'status.DINE_IN': '堂食',
+  'status.TAKEAWAY': '打包',
+  'status.PICKUP': '自提',
 };
 
 const dictionaries: Record<AdminLocale, Dictionary> = { en, 'zh-CN': zh };
