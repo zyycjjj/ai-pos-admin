@@ -56,6 +56,42 @@ export type BusinessDay = {
   notes: string | null;
 };
 
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
+
+export type AdminCustomer = {
+  id: string;
+  phone: string;
+  normalizedPhone: string;
+  name: string | null;
+  note: string | null;
+  tags: unknown[];
+  status: CustomerStatus;
+  firstOrderAt: string | null;
+  lastOrderAt: string | null;
+  orderCount: number;
+  totalSpend: number;
+  pointsBalance: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminCustomerListResponse = {
+  items: AdminCustomer[];
+  total: number;
+};
+
+export type LoyaltyPointLedger = {
+  id: string;
+  customerId: string;
+  orderId: string | null;
+  type: 'EARN' | 'ADJUST' | 'VOID' | 'REFUND_ADJUST';
+  points: number;
+  balanceAfter: number;
+  reason: string;
+  createdByUserId: string | null;
+  createdAt: string;
+};
+
 export type DiningArea = {
   id: string;
   name: string;
@@ -436,6 +472,11 @@ export type AdminOrder = {
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'PICKUP';
   tableId: string | null;
   tableName: string | null;
+  customerId: string | null;
+  customerPhone: string | null;
+  customerName: string | null;
+  loyaltyPointsEarned: number;
+  loyaltyPointsBalanceAfter: number | null;
   guestCount: number | null;
   status: string;
   printStatus: string;

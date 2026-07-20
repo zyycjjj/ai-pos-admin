@@ -712,6 +712,86 @@ tr:last-child td {
   border-bottom: 0;
 }
 
+tr.selected-row td,
+tr:hover td {
+  background: #fbfcfa;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.toolbar input {
+  width: 300px;
+}
+
+.split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 18px;
+  align-items: start;
+}
+
+.detail-panel {
+  display: grid;
+  gap: 18px;
+  border: 1px solid #dde3dc;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(30, 45, 36, 0.08);
+  padding: 18px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail-header h2,
+.detail-panel h3 {
+  margin: 0;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric-row div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #edf0ec;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.metric-row span,
+.compact-list span {
+  color: #66736b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.compact-list {
+  display: grid;
+  gap: 8px;
+}
+
+.compact-list div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #edf0ec;
+  padding-bottom: 8px;
+}
+
 .status {
   display: inline-flex;
   min-height: 24px;

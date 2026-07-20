@@ -5,6 +5,7 @@ import { AdminLayout } from '../layouts/AdminLayout';
 import { AiCenterPage } from '../pages/AiCenterPage';
 import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { CampaignsPage } from '../pages/CampaignsPage';
+import { CustomersPage } from '../pages/CustomersPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -55,6 +56,7 @@ export function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
               <Route path="/ai-center" element={<AiCenterPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

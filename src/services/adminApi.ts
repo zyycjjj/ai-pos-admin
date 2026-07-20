@@ -4,6 +4,8 @@ import type {
   AnalyticsContext,
   AnalyticsFilters,
   AdminCategory,
+  AdminCustomer,
+  AdminCustomerListResponse,
   AdminModifierGroup,
   AdminModifierOption,
   AdminOrder,
@@ -20,6 +22,7 @@ import type {
   KitchenStation,
   KitchenTicket,
   KitchenTicketStatus,
+  LoyaltyPointLedger,
   PrintDocumentType,
   PrintJob,
   PrintJobStatus,
@@ -85,6 +88,43 @@ export async function fetchShifts() {
 
 export async function fetchBusinessDays() {
   const { data } = await apiClient.get<BusinessDay[]>('/business-day');
+  return data;
+}
+
+export type CustomerFilters = {
+  search?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | '';
+  take?: number;
+  skip?: number;
+};
+
+export async function fetchCustomers(filters: CustomerFilters = {}) {
+  const { data } = await apiClient.get<AdminCustomerListResponse>('/admin/customers', { params: filters });
+  return data;
+}
+
+export async function fetchCustomer(id: string) {
+  const { data } = await apiClient.get<AdminCustomer>(`/admin/customers/${id}`);
+  return data;
+}
+
+export async function createCustomer(input: { phone: string; name?: string; note?: string }) {
+  const { data } = await apiClient.post<AdminCustomer>('/admin/customers', input);
+  return data;
+}
+
+export async function updateCustomer(id: string, input: { phone?: string; name?: string; note?: string; status?: AdminCustomer['status'] }) {
+  const { data } = await apiClient.patch<AdminCustomer>(`/admin/customers/${id}`, input);
+  return data;
+}
+
+export async function fetchCustomerOrders(id: string) {
+  const { data } = await apiClient.get<AdminOrder[]>(`/admin/customers/${id}/orders`);
+  return data;
+}
+
+export async function fetchCustomerPoints(id: string) {
+  const { data } = await apiClient.get<LoyaltyPointLedger[]>(`/admin/customers/${id}/points`);
   return data;
 }
 
