@@ -140,6 +140,24 @@ select {
   font-weight: 700;
 }
 
+.field-hint {
+  color: #66736b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.error-copy,
+.warning-copy {
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.compact-grid {
+  align-items: end;
+}
+
 .demo-accounts {
   display: grid;
   gap: 5px;

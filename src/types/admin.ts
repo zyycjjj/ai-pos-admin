@@ -302,6 +302,8 @@ export type CampaignDraft = {
   promoCode: string | null;
   productId: string | null;
   categoryName: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
   customerEligibilityMode: 'ALL_CUSTOMERS' | 'CUSTOMER_ONLY' | 'SEGMENT_ONLY';
   targetCustomerSegmentId: string | null;
   stackingPolicy: 'BEST_ONLY' | 'STACKABLE' | 'EXCLUSIVE';

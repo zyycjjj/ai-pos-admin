@@ -416,6 +416,8 @@ export type CampaignInput = {
   discountType?: 'percentage' | 'fixed_amount';
   discountValue: number;
   thresholdAmount?: number;
+  startsAt?: string;
+  endsAt?: string;
   promoCode?: string;
   productId?: string;
   categoryName?: string;
