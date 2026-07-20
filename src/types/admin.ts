@@ -302,6 +302,8 @@ export type CampaignDraft = {
   promoCode: string | null;
   productId: string | null;
   categoryName: string | null;
+  customerEligibilityMode: 'ALL_CUSTOMERS' | 'CUSTOMER_ONLY' | 'SEGMENT_ONLY';
+  targetCustomerSegmentId: string | null;
   stackingPolicy: 'BEST_ONLY' | 'STACKABLE' | 'EXCLUSIVE';
   usageLimit: number | null;
   usageCount: number;
@@ -310,6 +312,41 @@ export type CampaignDraft = {
   category: string | null;
   status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED' | 'ARCHIVED';
   createdAt: string;
+};
+
+export type CustomerSegmentRuleJson = {
+  minOrderCount?: number;
+  maxOrderCount?: number;
+  minTotalSpend?: number;
+  maxTotalSpend?: number;
+  lastOrderBeforeDays?: number;
+  lastOrderWithinDays?: number;
+  minPointsBalance?: number;
+  maxPointsBalance?: number;
+};
+
+export type CustomerSegment = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED';
+  type: 'SMART_RULE';
+  ruleJson: CustomerSegmentRuleJson;
+  memberCount: number;
+  lastEvaluatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CustomerSegmentCustomer = {
+  id: string;
+  phone: string;
+  name: string | null;
+  orderCount: number;
+  totalSpend: number;
+  pointsBalance: number;
+  lastOrderAt: string | null;
+  matchedAt: string;
 };
 
 export type AiDraft = {

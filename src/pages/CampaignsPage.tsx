@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { formatStatusLabel, useAdminI18n } from '../i18n';
-import { createCampaign, fetchCampaigns, updateCampaignStatus, type CampaignInput } from '../services/adminApi';
+import { createCampaign, fetchCampaigns, fetchCustomerSegments, updateCampaignStatus, type CampaignInput } from '../services/adminApi';
 import type { CampaignDraft } from '../types/admin';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -12,14 +12,15 @@ export function CampaignsPage() {
   const { t } = useAdminI18n();
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['admin', 'campaigns'], queryFn: fetchCampaigns });
+  const segmentsQuery = useQuery({ queryKey: ['admin', 'customer-segments'], queryFn: fetchCustomerSegments });
   const [statusFilter, setStatusFilter] = useState<'ALL' | CampaignDraft['status']>('ALL');
-  const [form, setForm] = useState<CampaignInput>({ name: '', type: 'ORDER_DISCOUNT', discountType: 'percentage', discountValue: 10, stackingPolicy: 'BEST_ONLY' });
+  const [form, setForm] = useState<CampaignInput>({ name: '', type: 'ORDER_DISCOUNT', discountType: 'percentage', discountValue: 10, stackingPolicy: 'BEST_ONLY', customerEligibilityMode: 'ALL_CUSTOMERS' });
 
   const visibleCampaigns = useMemo(() => (query.data ?? []).filter((campaign) => statusFilter === 'ALL' || campaign.status === statusFilter), [query.data, statusFilter]);
   const saveCampaign = useMutation({
     mutationFn: createCampaign,
     onSuccess: () => {
-      setForm({ name: '', type: 'ORDER_DISCOUNT', discountType: 'percentage', discountValue: 10, stackingPolicy: 'BEST_ONLY' });
+      setForm({ name: '', type: 'ORDER_DISCOUNT', discountType: 'percentage', discountValue: 10, stackingPolicy: 'BEST_ONLY', customerEligibilityMode: 'ALL_CUSTOMERS' });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'campaigns'] });
     },
   });
@@ -51,6 +52,15 @@ export function CampaignsPage() {
           <label>{t('campaigns.threshold')}<input type="number" min="0" value={form.thresholdAmount ?? ''} onChange={(event) => setForm((current) => ({ ...current, thresholdAmount: event.target.value ? Number(event.target.value) : undefined }))} /></label>
           <label>{t('campaigns.promoCode')}<input value={form.promoCode ?? ''} onChange={(event) => setForm((current) => ({ ...current, promoCode: event.target.value }))} /></label>
           <label>{t('campaigns.category')}<input value={form.categoryName ?? ''} onChange={(event) => setForm((current) => ({ ...current, categoryName: event.target.value }))} /></label>
+          <label>{t('campaigns.customerEligibility')}<select value={form.customerEligibilityMode} onChange={(event) => setForm((current) => ({ ...current, customerEligibilityMode: event.target.value as CampaignInput['customerEligibilityMode'], targetCustomerSegmentId: event.target.value === 'SEGMENT_ONLY' ? current.targetCustomerSegmentId : undefined }))}>
+            <option value="ALL_CUSTOMERS">{t('campaigns.eligibilityAll')}</option>
+            <option value="CUSTOMER_ONLY">{t('campaigns.eligibilityCustomer')}</option>
+            <option value="SEGMENT_ONLY">{t('campaigns.eligibilitySegment')}</option>
+          </select></label>
+          <label>{t('campaigns.targetSegment')}<select disabled={form.customerEligibilityMode !== 'SEGMENT_ONLY'} value={form.targetCustomerSegmentId ?? ''} onChange={(event) => setForm((current) => ({ ...current, targetCustomerSegmentId: event.target.value || undefined }))}>
+            <option value="">{t('campaigns.noSegment')}</option>
+            {(segmentsQuery.data ?? []).filter((segment) => segment.status === 'ACTIVE').map((segment) => <option key={segment.id} value={segment.id}>{segment.name}</option>)}
+          </select></label>
           <label>{t('campaigns.stacking')}<select value={form.stackingPolicy} onChange={(event) => setForm((current) => ({ ...current, stackingPolicy: event.target.value as CampaignInput['stackingPolicy'] }))}>
             <option value="BEST_ONLY">{t('campaigns.bestOnly')}</option>
             <option value="STACKABLE">{t('campaigns.stackable')}</option>
@@ -82,6 +92,7 @@ export function CampaignsPage() {
                 <th>{t('campaigns.type')}</th>
                 <th>{t('campaigns.discount')}</th>
                 <th>{t('campaigns.code')}</th>
+                <th>{t('campaigns.customerEligibility')}</th>
                 <th>{t('campaigns.usage')}</th>
                 <th>{t('campaigns.discountTotal')}</th>
                 <th>{t('common.status')}</th>
@@ -95,6 +106,7 @@ export function CampaignsPage() {
                   <td>{formatStatusLabel(t, campaign.type)}</td>
                   <td>{campaign.discountType === 'fixed_amount' ? money.format(campaign.discountValue ?? 0) : `${campaign.discountValue ?? 0}%`}</td>
                   <td>{campaign.promoCode ?? '-'}</td>
+                  <td>{formatCustomerEligibility(t, campaign, segmentsQuery.data ?? [])}</td>
                   <td>{campaign.usageCount}{campaign.usageLimit ? ` / ${campaign.usageLimit}` : ''}</td>
                   <td>{money.format(campaign.discountTotal)}</td>
                   <td><span className="status-pill">{formatStatusLabel(t, campaign.status)}</span></td>
@@ -111,4 +123,13 @@ export function CampaignsPage() {
       ) : null}
     </section>
   );
+}
+
+function formatCustomerEligibility(t: (key: string) => string, campaign: CampaignDraft, segments: Array<{ id: string; name: string }>) {
+  if (campaign.customerEligibilityMode === 'CUSTOMER_ONLY') return t('campaigns.eligibilityCustomer');
+  if (campaign.customerEligibilityMode === 'SEGMENT_ONLY') {
+    const segment = segments.find((item) => item.id === campaign.targetCustomerSegmentId);
+    return segment ? `${t('campaigns.eligibilitySegment')}: ${segment.name}` : t('campaigns.eligibilitySegment');
+  }
+  return t('campaigns.eligibilityAll');
 }

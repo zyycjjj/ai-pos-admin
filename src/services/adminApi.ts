@@ -15,6 +15,9 @@ import type {
   DiningArea,
   DiningTable,
   CampaignDraft,
+  CustomerSegment,
+  CustomerSegmentCustomer,
+  CustomerSegmentRuleJson,
   CopilotChatResponse,
   CopilotConversationDetail,
   CopilotConversationSummary,
@@ -416,6 +419,8 @@ export type CampaignInput = {
   promoCode?: string;
   productId?: string;
   categoryName?: string;
+  customerEligibilityMode?: CampaignDraft['customerEligibilityMode'];
+  targetCustomerSegmentId?: string;
   stackingPolicy?: CampaignDraft['stackingPolicy'];
   priority?: number;
   usageLimit?: number;
@@ -428,6 +433,42 @@ export async function createCampaign(input: CampaignInput) {
 
 export async function updateCampaignStatus(id: string, status: CampaignDraft['status']) {
   const { data } = await apiClient.patch<CampaignDraft>(`/admin/campaigns/${id}/status`, { status });
+  return data;
+}
+
+export type CustomerSegmentInput = {
+  name: string;
+  description?: string;
+  ruleJson: CustomerSegmentRuleJson;
+};
+
+export async function fetchCustomerSegments() {
+  const { data } = await apiClient.get<CustomerSegment[]>('/admin/customer-segments');
+  return data;
+}
+
+export async function createCustomerSegment(input: CustomerSegmentInput) {
+  const { data } = await apiClient.post<CustomerSegment>('/admin/customer-segments', input);
+  return data;
+}
+
+export async function updateCustomerSegment(id: string, input: CustomerSegmentInput) {
+  const { data } = await apiClient.patch<CustomerSegment>(`/admin/customer-segments/${id}`, input);
+  return data;
+}
+
+export async function updateCustomerSegmentStatus(id: string, status: CustomerSegment['status']) {
+  const { data } = await apiClient.patch<CustomerSegment>(`/admin/customer-segments/${id}/status`, { status });
+  return data;
+}
+
+export async function evaluateCustomerSegment(id: string) {
+  const { data } = await apiClient.post<{ segmentId: string; matchedCustomerCount: number; matchedCustomerIds: string[]; evaluatedAt: string }>(`/admin/customer-segments/${id}/evaluate`);
+  return data;
+}
+
+export async function fetchCustomerSegmentCustomers(id: string) {
+  const { data } = await apiClient.get<CustomerSegmentCustomer[]>(`/admin/customer-segments/${id}/customers`);
   return data;
 }
 
