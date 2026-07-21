@@ -14,6 +14,7 @@ import { KitchenPage } from '../pages/KitchenPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { PrintersPage } from '../pages/PrintersPage';
 import { ProductsPage } from '../pages/ProductsPage';
+import { ReportsPage } from '../pages/ReportsPage';
 import { ShiftsPage } from '../pages/ShiftsPage';
 import { StaffPage } from '../pages/StaffPage';
 import { TablesPage } from '../pages/TablesPage';
@@ -49,6 +50,7 @@ export function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
               <Route path="/staff" element={<StaffPage />} />
               <Route path="/shifts" element={<ShiftsPage />} />
               <Route path="/kitchen" element={<KitchenPage />} />

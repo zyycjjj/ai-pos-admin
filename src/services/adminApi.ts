@@ -26,6 +26,7 @@ import type {
   KitchenTicket,
   KitchenTicketStatus,
   LoyaltyPointLedger,
+  CampaignReportItem,
   PrintDocumentType,
   PrintJob,
   PrintJobStatus,
@@ -36,6 +37,13 @@ import type {
   PrinterStatus,
   PrinterType,
   ProductFormInput,
+  ProductReportItem,
+  CustomerReportItem,
+  ItemsReport,
+  PaymentReportItem,
+  ReportPreset,
+  ReportSummary,
+  ShiftReportItem,
   StaffMember,
 } from '../types/admin';
 import type { StoreRole } from '../types/auth';
@@ -129,6 +137,54 @@ export async function fetchCustomerOrders(id: string) {
 export async function fetchCustomerPoints(id: string) {
   const { data } = await apiClient.get<LoyaltyPointLedger[]>(`/admin/customers/${id}/points`);
   return data;
+}
+
+export type ReportFilters = {
+  preset?: ReportPreset;
+  from?: string;
+  to?: string;
+  timezone?: string;
+  limit?: number;
+};
+
+export async function fetchReportSummary(filters: ReportFilters) {
+  const { data } = await apiClient.get<ReportSummary>('/admin/reports/summary', { params: filters });
+  return data;
+}
+
+export async function fetchProductReport(filters: ReportFilters) {
+  const { data } = await apiClient.get<ItemsReport<ProductReportItem>>('/admin/reports/products', { params: filters });
+  return data;
+}
+
+export async function fetchCustomerReport(filters: ReportFilters) {
+  const { data } = await apiClient.get<ItemsReport<CustomerReportItem>>('/admin/reports/customers', { params: filters });
+  return data;
+}
+
+export async function fetchCampaignReport(filters: ReportFilters) {
+  const { data } = await apiClient.get<ItemsReport<CampaignReportItem>>('/admin/reports/campaigns', { params: filters });
+  return data;
+}
+
+export async function fetchPaymentReport(filters: ReportFilters) {
+  const { data } = await apiClient.get<ItemsReport<PaymentReportItem>>('/admin/reports/payments', { params: filters });
+  return data;
+}
+
+export async function fetchShiftReport(filters: ReportFilters) {
+  const { data } = await apiClient.get<ItemsReport<ShiftReportItem>>('/admin/reports/shifts', { params: filters });
+  return data;
+}
+
+export async function downloadReportCsv(type: 'summary' | 'products' | 'customers' | 'campaigns' | 'payments' | 'shifts', filters: ReportFilters) {
+  const { data } = await apiClient.get<Blob>('/admin/reports/export', { params: { ...filters, type, format: 'csv' }, responseType: 'blob' });
+  const url = URL.createObjectURL(data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `ai-pos-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function fetchDiningAreas() {

@@ -1,4 +1,4 @@
-import { BarChart3, ChefHat, Clock, LayoutDashboard, ListOrdered, LogOut, Megaphone, Package, Printer, Sparkles, Table2, Tags, UserRound, Users } from 'lucide-react';
+import { BarChart3, ChefHat, Clock, FileSpreadsheet, LayoutDashboard, ListOrdered, LogOut, Megaphone, Package, Printer, Sparkles, Table2, Tags, UserRound, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { useAuthStore } from '../stores/authStore';
@@ -7,6 +7,7 @@ import { formatStatusLabel, useAdminI18n } from '../i18n';
 const navItems = [
   { to: '/dashboard', labelKey: 'nav.dashboard', Icon: LayoutDashboard },
   { to: '/analytics', labelKey: 'nav.analytics', Icon: BarChart3 },
+  { to: '/reports', labelKey: 'nav.reports', Icon: FileSpreadsheet },
   { to: '/staff', labelKey: 'nav.staff', Icon: Users },
   { to: '/shifts', labelKey: 'nav.shifts', Icon: Clock },
   { to: '/kitchen', labelKey: 'nav.kitchen', Icon: ChefHat },

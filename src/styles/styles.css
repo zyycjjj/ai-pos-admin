@@ -307,6 +307,13 @@ select {
   gap: 18px;
 }
 
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
 .metric-card {
   display: grid;
   gap: 12px;
@@ -344,6 +351,25 @@ select {
   border: 1px solid #dde3dc;
   border-radius: 10px;
   background: #ffffff;
+  margin-bottom: 18px;
+}
+
+.report-section {
+  margin-top: 18px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #17211b;
+  font-size: 18px;
 }
 
 .segmented-control {
