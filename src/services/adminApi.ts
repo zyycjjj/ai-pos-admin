@@ -23,6 +23,8 @@ import type {
   CopilotConversationSummary,
   DashboardSummary,
   KitchenStation,
+  KitchenSettings,
+  KitchenPrintMode,
   KitchenTicket,
   KitchenTicketStatus,
   LoyaltyPointLedger,
@@ -287,6 +289,16 @@ export async function updateCategoryStatus(id: string, status: 'ACTIVE' | 'INACT
 
 export async function fetchKitchenStations() {
   const { data } = await apiClient.get<KitchenStation[]>('/admin/kitchen/stations');
+  return data;
+}
+
+export async function fetchKitchenSettings() {
+  const { data } = await apiClient.get<KitchenSettings>('/admin/kitchen/settings');
+  return data;
+}
+
+export async function updateKitchenPrintMode(mode: KitchenPrintMode) {
+  const { data } = await apiClient.patch<KitchenSettings>('/admin/kitchen/settings/print-mode', { mode });
   return data;
 }
 

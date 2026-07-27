@@ -224,7 +224,9 @@ export type KitchenStation = {
   updatedAt: string;
 };
 
-export type KitchenTicketStatus = 'NEW' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+export type KitchenTicketStatus = 'NEW' | 'PREPARING' | 'IN_PROGRESS' | 'READY' | 'COMPLETED' | 'CANCELLED';
+export type KitchenPrintMode = 'ORDER_TICKET' | 'ITEM_TICKET';
+export type KitchenSettings = { printMode: KitchenPrintMode };
 
 export type KitchenTicket = {
   id: string;

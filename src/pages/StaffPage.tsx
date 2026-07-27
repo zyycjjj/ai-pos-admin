@@ -6,7 +6,7 @@ import { createStaff, disableStaff, fetchStaff, updateStaffRole } from '../servi
 import { useAuthStore } from '../stores/authStore';
 import type { StoreRole } from '../types/auth';
 
-const roles: Array<Exclude<StoreRole, 'OWNER'>> = ['MANAGER', 'CASHIER', 'STAFF'];
+const roles: Array<Exclude<StoreRole, 'OWNER'>> = ['MANAGER', 'CASHIER', 'KITCHEN', 'STAFF'];
 
 export function StaffPage() {
   const queryClient = useQueryClient();

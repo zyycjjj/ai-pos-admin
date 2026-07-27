@@ -1,24 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChefHat, CirclePause, Play, Plus, X } from 'lucide-react';
+import { ChefHat, Plus, Printer } from 'lucide-react';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { Pagination } from '../components/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { formatStatusLabel, useAdminI18n } from '../i18n';
-import {
-  cancelKitchenTicket,
-  completeKitchenTicket,
-  createKitchenStation,
-  fetchKitchenStations,
-  fetchKitchenTickets,
-  markKitchenTicketReady,
-  setDefaultKitchenStation,
-  startKitchenTicket,
-  updateKitchenStation,
-  updateKitchenStationStatus,
-} from '../services/adminApi';
-import type { KitchenStation, KitchenTicket, KitchenTicketStatus } from '../types/admin';
+import { createKitchenStation, fetchKitchenSettings, fetchKitchenStations, fetchKitchenTickets, setDefaultKitchenStation, updateKitchenPrintMode, updateKitchenStation, updateKitchenStationStatus } from '../services/adminApi';
+import type { KitchenPrintMode, KitchenStation, KitchenTicket, KitchenTicketStatus } from '../types/admin';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -38,6 +27,7 @@ export function KitchenPage() {
   const [stationForm, setStationForm] = useState<StationForm>(emptyStationForm);
   const [filters, setFilters] = useState<{ stationId?: string; status?: KitchenTicketStatus | '' }>({});
   const stationsQuery = useQuery({ queryKey: ['admin', 'kitchen', 'stations'], queryFn: fetchKitchenStations });
+  const settingsQuery = useQuery({ queryKey: ['admin', 'kitchen', 'settings'], queryFn: fetchKitchenSettings });
   const ticketsQuery = useQuery({ queryKey: ['admin', 'kitchen', 'tickets', filters], queryFn: () => fetchKitchenTickets({ ...filters, take: 100 }) });
   const ticketPagination = usePagination(ticketsQuery.data, 10);
   const activeStations = useMemo(() => (stationsQuery.data ?? []).filter((station) => station.status === 'ACTIVE'), [stationsQuery.data]);
@@ -59,14 +49,12 @@ export function KitchenPage() {
     onSuccess: refreshStations,
   });
   const setDefault = useMutation({ mutationFn: (id: string) => setDefaultKitchenStation(id), onSuccess: refreshStations });
-  const ticketAction = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'start' | 'ready' | 'complete' | 'cancel' }) => {
-      if (action === 'start') return startKitchenTicket(id);
-      if (action === 'ready') return markKitchenTicketReady(id);
-      if (action === 'complete') return completeKitchenTicket(id);
-      return cancelKitchenTicket(id, 'Cancelled from Admin Kitchen');
+  const printModeMutation = useMutation({
+    mutationFn: (mode: KitchenPrintMode) => updateKitchenPrintMode(mode),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'kitchen', 'settings'] });
+      refreshTickets();
     },
-    onSuccess: refreshTickets,
   });
 
   return (
@@ -75,6 +63,7 @@ export function KitchenPage() {
         <div>
           <span className="eyebrow">{t('kitchen.eyebrow')}</span>
           <h1>{t('kitchen.title')}</h1>
+          <p className="page-description">{t('kitchen.configDescription')}</p>
         </div>
       </div>
 
@@ -151,10 +140,35 @@ export function KitchenPage() {
         <div className="table-card">
           <div className="panel-header">
             <div>
+              <span className="eyebrow">{t('kitchen.printMode')}</span>
+              <h2>{t('kitchen.ticketMode')}</h2>
+            </div>
+            <Printer size={20} />
+          </div>
+          <div className="filter-bar compact-filter">
+            <label>
+              {t('kitchen.ticketMode')}
+              <select
+                value={settingsQuery.data?.printMode ?? 'ORDER_TICKET'}
+                onChange={(event) => printModeMutation.mutate(event.target.value as KitchenPrintMode)}
+                disabled={settingsQuery.isLoading || printModeMutation.isPending}
+              >
+                <option value="ORDER_TICKET">{t('kitchen.orderTicketMode')}</option>
+                <option value="ITEM_TICKET">{t('kitchen.itemTicketMode')}</option>
+              </select>
+            </label>
+          </div>
+          <p className="muted-copy">{t('kitchen.printModeHelp')}</p>
+        </div>
+
+        <div className="table-card">
+          <div className="panel-header">
+            <div>
               <span className="eyebrow">{t('kitchen.queue')}</span>
-              <h2>{t('kitchen.tickets')}</h2>
+              <h2>{t('kitchen.ticketsReadonly')}</h2>
             </div>
           </div>
+          <p className="muted-copy">{t('kitchen.posModeHint')}</p>
           <div className="filter-bar compact-filter">
             <label>
               {t('kitchen.station')}
@@ -168,7 +182,7 @@ export function KitchenPage() {
               <select value={filters.status ?? ''} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as KitchenTicketStatus | '' }))}>
                 <option value="">{t('common.active')}</option>
                 <option value="NEW">{formatStatusLabel(t, 'NEW')}</option>
-                <option value="PREPARING">{formatStatusLabel(t, 'PREPARING')}</option>
+                <option value="IN_PROGRESS">{formatStatusLabel(t, 'IN_PROGRESS')}</option>
                 <option value="READY">{formatStatusLabel(t, 'READY')}</option>
                 <option value="COMPLETED">{formatStatusLabel(t, 'COMPLETED')}</option>
                 <option value="CANCELLED">{formatStatusLabel(t, 'CANCELLED')}</option>
@@ -180,7 +194,7 @@ export function KitchenPage() {
           {ticketsQuery.data?.length === 0 ? <EmptyState title={t('kitchen.emptyTickets')} description={t('kitchen.emptyTicketsBody')} /> : null}
           <div className="ticket-list">
             {ticketPagination.pagedItems.map((ticket) => (
-              <TicketCard key={ticket.id} ticket={ticket} onAction={(action) => ticketAction.mutate({ id: ticket.id, action })} busy={ticketAction.isPending} />
+              <TicketCard key={ticket.id} ticket={ticket} />
             ))}
           </div>
           <Pagination {...ticketPagination} onPageChange={ticketPagination.setPage} onPageSizeChange={ticketPagination.setPageSize} />
@@ -190,7 +204,7 @@ export function KitchenPage() {
   );
 }
 
-function TicketCard({ busy, onAction, ticket }: { busy: boolean; onAction: (action: 'start' | 'ready' | 'complete' | 'cancel') => void; ticket: KitchenTicket }) {
+function TicketCard({ ticket }: { ticket: KitchenTicket }) {
   const { t } = useAdminI18n();
   return (
     <article className="modifier-card kitchen-ticket-card">
@@ -213,13 +227,7 @@ function TicketCard({ busy, onAction, ticket }: { busy: boolean; onAction: (acti
         <span>{money.format(ticket.order.total)}</span>
         <span>{new Date(ticket.createdAt).toLocaleTimeString()}</span>
       </div>
-      <div className="table-actions">
-        {ticket.status === 'NEW' ? <button className="secondary-button icon-button" type="button" disabled={busy} onClick={() => onAction('start')}><Play size={16} /> {t('kitchen.start')}</button> : null}
-        {ticket.status === 'NEW' || ticket.status === 'PREPARING' ? <button className="secondary-button icon-button" type="button" disabled={busy} onClick={() => onAction('ready')}><Check size={16} /> {t('kitchen.ready')}</button> : null}
-        {ticket.status === 'READY' ? <button className="secondary-button icon-button" type="button" disabled={busy} onClick={() => onAction('complete')}><Check size={16} /> {t('kitchen.complete')}</button> : null}
-        {ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED' ? <button className="secondary-button icon-button" type="button" disabled={busy} onClick={() => onAction('cancel')}><X size={16} /> {t('common.cancel')}</button> : null}
-        {ticket.status === 'PREPARING' ? <CirclePause size={16} aria-hidden /> : null}
-      </div>
+      <p className="muted-copy">{t('kitchen.readonlyTicketHint')}</p>
     </article>
   );
 }
