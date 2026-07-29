@@ -11,6 +11,8 @@ import type {
   AdminOrder,
   AdminProduct,
   AdminShift,
+  BatchCreateTablesInput,
+  BatchCreateTablesResult,
   BusinessDay,
   DiningArea,
   DiningTable,
@@ -206,6 +208,11 @@ export async function fetchDiningTables() {
 
 export async function createDiningTable(input: { areaId: string; name: string; seats?: number; sortOrder?: number; status?: DiningTable['status'] }) {
   const { data } = await apiClient.post<DiningTable>('/admin/dining-tables', input);
+  return data;
+}
+
+export async function batchCreateDiningTables(input: BatchCreateTablesInput) {
+  const { data } = await apiClient.post<BatchCreateTablesResult>('/admin/tables/batch-create', input);
   return data;
 }
 

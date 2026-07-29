@@ -169,6 +169,25 @@ export type DiningTable = {
   updatedAt: string;
 };
 
+export type BatchCreateTablesInput = {
+  areaId?: string;
+  areaName?: string;
+  prefix: string;
+  startNumber: number;
+  count: number;
+  digits?: number;
+  defaultSeats?: number;
+  skipExisting?: boolean;
+};
+
+export type BatchCreateTablesResult = {
+  areaId: string;
+  areaName: string;
+  created: number;
+  skipped: number;
+  items: Array<{ name: string; status: 'CREATED' | 'SKIPPED' }>;
+};
+
 export type StaffMember = {
   id: string;
   userId: string;

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { formatStatusLabel, useAdminI18n } from '../i18n';
-import { createDiningArea, createDiningTable, fetchDiningAreas, fetchDiningTables } from '../services/adminApi';
+import { batchCreateDiningTables, createDiningArea, createDiningTable, fetchDiningAreas, fetchDiningTables } from '../services/adminApi';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -19,6 +19,14 @@ export function TablesPage() {
   const [areaFilter, setAreaFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortMode, setSortMode] = useState<'AREA' | 'STATUS' | 'OPENED_AT'>('AREA');
+  const [batchAreaId, setBatchAreaId] = useState('');
+  const [batchAreaName, setBatchAreaName] = useState('');
+  const [batchPrefix, setBatchPrefix] = useState('A');
+  const [batchStart, setBatchStart] = useState('1');
+  const [batchCount, setBatchCount] = useState('5');
+  const [batchDigits, setBatchDigits] = useState('2');
+  const [batchSeats, setBatchSeats] = useState('2');
+  const [batchSkipExisting, setBatchSkipExisting] = useState(true);
 
   const createArea = useMutation({
     mutationFn: createDiningArea,
@@ -32,6 +40,13 @@ export function TablesPage() {
     onSuccess: () => {
       setTableName('');
       setSeats('2');
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'dining-tables'] });
+    },
+  });
+  const batchCreate = useMutation({
+    mutationFn: batchCreateDiningTables,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'dining-areas'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'dining-tables'] });
     },
   });
@@ -120,6 +135,73 @@ export function TablesPage() {
             <button className="primary-button" type="button" disabled={!selectedAreaId || !tableName.trim() || createTable.isPending} onClick={() => createTable.mutate({ areaId: selectedAreaId, name: tableName, seats: Number(seats) || 2 })}>
               {t('common.create')}
             </button>
+          </div>
+        </div>
+
+        <div className="panel-card">
+          <h2>{t('tables.batchCreate')}</h2>
+          <div className="form-grid">
+            <label>
+              {t('tables.area')}
+              <select value={batchAreaId} onChange={(event) => setBatchAreaId(event.target.value)}>
+                <option value="">{t('tables.newOrExistingArea')}</option>
+                {areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
+              </select>
+            </label>
+            {!batchAreaId ? (
+              <label>
+                {t('tables.areaName')}
+                <input value={batchAreaName} onChange={(event) => setBatchAreaName(event.target.value)} placeholder={t('tables.areaNameExample')} />
+              </label>
+            ) : null}
+            <label>
+              {t('tables.prefix')}
+              <input value={batchPrefix} onChange={(event) => setBatchPrefix(event.target.value.toUpperCase())} />
+            </label>
+            <label>
+              {t('tables.startNumber')}
+              <input type="number" min="1" value={batchStart} onChange={(event) => setBatchStart(event.target.value)} />
+            </label>
+            <label>
+              {t('tables.count')}
+              <input type="number" min="1" max="200" value={batchCount} onChange={(event) => setBatchCount(event.target.value)} />
+            </label>
+            <label>
+              {t('tables.digits')}
+              <input type="number" min="1" value={batchDigits} onChange={(event) => setBatchDigits(event.target.value)} />
+            </label>
+            <label>
+              {t('tables.defaultSeats')}
+              <input type="number" min="1" value={batchSeats} onChange={(event) => setBatchSeats(event.target.value)} />
+            </label>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={batchSkipExisting} onChange={(event) => setBatchSkipExisting(event.target.checked)} />
+              {t('tables.skipExisting')}
+            </label>
+            <button
+              className="primary-button"
+              type="button"
+              disabled={!batchPrefix.trim() || (!batchAreaId && !batchAreaName.trim()) || batchCreate.isPending}
+              onClick={() =>
+                batchCreate.mutate({
+                  areaId: batchAreaId || undefined,
+                  areaName: batchAreaId ? undefined : batchAreaName,
+                  prefix: batchPrefix,
+                  startNumber: Number(batchStart) || 1,
+                  count: Number(batchCount) || 1,
+                  digits: Number(batchDigits) || 2,
+                  defaultSeats: Number(batchSeats) || 2,
+                  skipExisting: batchSkipExisting,
+                })
+              }
+            >
+              {t('tables.batchCreateAction')}
+            </button>
+            {batchCreate.data ? (
+              <p className="muted-copy">
+                {t('tables.batchResult', { created: batchCreate.data.created, skipped: batchCreate.data.skipped })}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
