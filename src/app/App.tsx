@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AdminLayout } from '../layouts/AdminLayout';
 import { AiCenterPage } from '../pages/AiCenterPage';
+import { AiDailyPage } from '../pages/AiDailyPage';
 import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { CampaignsPage } from '../pages/CampaignsPage';
 import { CustomerSegmentsPage } from '../pages/CustomerSegmentsPage';
@@ -62,6 +63,7 @@ export function App() {
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/customer-segments" element={<CustomerSegmentsPage />} />
               <Route path="/ai-center" element={<AiCenterPage />} />
+              <Route path="/ai-daily" element={<AiDailyPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

@@ -1,6 +1,8 @@
 import { apiClient } from './apiClient';
 import type {
   AiDraft,
+  AiBusinessDailyReport,
+  AiBusinessDailyRecommendation,
   AnalyticsContext,
   AnalyticsFilters,
   AdminCategory,
@@ -73,6 +75,34 @@ export async function fetchAnalyticsContext(filters: AnalyticsFilters) {
 
 export async function fetchCopilotDailyBrief() {
   const { data } = await apiClient.get<CopilotChatResponse>('/admin/ai/copilot/daily-brief');
+  return data;
+}
+
+export type AiBusinessDailyFilters = {
+  preset?: 'today' | 'yesterday' | 'last7days' | 'custom';
+  from?: string;
+  to?: string;
+  timezone?: string;
+};
+
+export async function fetchAiBusinessDaily(filters: AiBusinessDailyFilters) {
+  const { data } = await apiClient.get<AiBusinessDailyReport>('/admin/ai/business-daily', { params: filters });
+  return data;
+}
+
+export async function fetchAiRecommendations(filters: AiBusinessDailyFilters) {
+  const { data } = await apiClient.get<AiBusinessDailyRecommendation[]>('/admin/ai/recommendations', { params: filters });
+  return data;
+}
+
+export async function createAiCampaignDraft(input: Pick<AiBusinessDailyRecommendation, 'id' | 'type' | 'title' | 'reason'> & { campaignTemplate?: AiBusinessDailyRecommendation['action']['campaignTemplate'] }) {
+  const { data } = await apiClient.post<CampaignDraft>('/admin/ai/campaign-drafts', {
+    recommendationId: input.id,
+    type: input.type,
+    title: input.title,
+    reason: input.reason,
+    campaignTemplate: input.campaignTemplate,
+  });
   return data;
 }
 

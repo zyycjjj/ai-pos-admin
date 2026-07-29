@@ -444,6 +444,50 @@ export type CampaignDraft = {
   createdAt: string;
 };
 
+export type AiBusinessDailyEvidence = {
+  id: string;
+  type: 'METRIC' | 'ORDER' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN' | 'REFUND' | 'DISCOUNT' | 'TABLE' | 'SHIFT' | 'APPROVAL';
+  title: string;
+  value?: number | string | null;
+  refId?: string | null;
+  detail?: Record<string, unknown>;
+};
+
+export type AiBusinessDailyRecommendation = {
+  id: string;
+  type: 'SALES' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN' | 'REFUND' | 'DISCOUNT' | 'TABLE';
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  title: string;
+  reason: string;
+  evidenceIds: string[];
+  action: {
+    kind: 'NONE' | 'CREATE_CAMPAIGN_DRAFT';
+    label: string;
+    campaignTemplate?: 'CUSTOMER_REACTIVATION' | 'TOP_CUSTOMER_REWARD' | 'LOW_SELLING_PRODUCT_PROMO' | 'THRESHOLD_DISCOUNT' | 'LUNCH_TIME_PROMO';
+  };
+};
+
+export type AiBusinessDailyReport = {
+  range: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'custom' };
+  summary: { text: string; evidenceIds: string[] };
+  highlights: Array<{ text: string; evidenceIds: string[] }>;
+  risks: Array<{ text: string; evidenceIds: string[] }>;
+  metrics: {
+    sales: { grossSales: number; netSales: number; refundTotal: number; discountTotal: number; promotionDiscountTotal: number; manualDiscountTotal: number; orderCount: number; averageOrderValue: number };
+    product: { topProducts: Array<{ productId: string; name: string; quantitySold: number; netSales: number }>; lowSellingProducts: Array<{ productId: string; name: string; quantitySold: number; netSales: number }>; soldOutProducts: Array<{ productId: string; name: string }>; inactiveProducts: Array<{ productId: string; name: string }>; productsWithHighModifierUsage: Array<{ productId: string; name: string; modifierUsageCount: number }> };
+    customer: { newCustomerCount: number; repeatCustomerCount: number; repeatRate: number; topCustomers: Array<{ customerId: string; name: string | null; phone: string; totalSpend: number; orderCount: number }>; dormantCustomers: Array<{ customerId: string; name: string | null; phone: string; lastOrderAt: string | null }>; loyaltyPointsIssued: number };
+    campaign: { activeCampaignCount: number; campaignUsageCount: number; campaignDiscountTotal: number; topCampaigns: Array<{ campaignId: string; name: string; usageCount: number; discountTotal: number }>; campaignsNearUsageLimit: Array<{ campaignId: string; name: string; usageCount: number; usageLimit: number }> };
+    kitchen: { ticketCount: number; readyTicketCount: number; cancelledTicketCount: number; overdueTicketCount: number; averageWaitMinutes: number; averageCookMinutes: number; topOverdueStations: Array<{ stationId: string; name: string; overdueTicketCount: number }>; urgentTicketCount: number };
+    table: { dineInOrderCount: number; tableOrderCount: number; averageTableDuration: number; topTablesBySales: Array<{ tableId: string; name: string; sales: number; orderCount: number }>; cancelledTableOrderCount: number };
+    refundApproval: { refundCount: number; refundTotal: number; managerApprovalCount: number; voidCount: number; cashOutCount: number; manualDiscountApprovalCount: number };
+  };
+  evidence: AiBusinessDailyEvidence[];
+  recommendations: AiBusinessDailyRecommendation[];
+  generatedBy: string;
+  fallback: boolean;
+  generatedAt: string;
+};
+
 export type CustomerSegmentRuleJson = {
   minOrderCount?: number;
   maxOrderCount?: number;
