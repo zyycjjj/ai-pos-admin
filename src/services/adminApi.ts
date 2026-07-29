@@ -27,7 +27,10 @@ import type {
   KitchenStation,
   KitchenSettings,
   KitchenPrintMode,
+  KitchenRouteSummary,
+  KitchenStaffStationAssignment,
   KitchenTicket,
+  KitchenTicketPreview,
   KitchenTicketStatus,
   LoyaltyPointLedger,
   CampaignReportItem,
@@ -309,12 +312,12 @@ export async function updateKitchenPrintMode(mode: KitchenPrintMode) {
   return data;
 }
 
-export async function createKitchenStation(input: { name: string; code: string; sortOrder?: number; isDefault?: boolean }) {
+export async function createKitchenStation(input: { name: string; code: string; sortOrder?: number; isDefault?: boolean; warningMinutes?: number; overdueMinutes?: number }) {
   const { data } = await apiClient.post<KitchenStation>('/admin/kitchen/stations', input);
   return data;
 }
 
-export async function updateKitchenStation(id: string, input: { name: string; code: string; sortOrder?: number; isDefault?: boolean }) {
+export async function updateKitchenStation(id: string, input: { name: string; code: string; sortOrder?: number; isDefault?: boolean; warningMinutes?: number; overdueMinutes?: number }) {
   const { data } = await apiClient.patch<KitchenStation>(`/admin/kitchen/stations/${id}`, input);
   return data;
 }
@@ -331,6 +334,26 @@ export async function setDefaultKitchenStation(id: string) {
 
 export async function fetchKitchenTickets(filters: { stationId?: string; status?: KitchenTicketStatus | ''; take?: number } = {}) {
   const { data } = await apiClient.get<KitchenTicket[]>('/admin/kitchen/tickets', { params: filters });
+  return data;
+}
+
+export async function fetchKitchenRouteSummary() {
+  const { data } = await apiClient.get<KitchenRouteSummary>('/admin/kitchen/route-summary');
+  return data;
+}
+
+export async function fetchKitchenStaffStations() {
+  const { data } = await apiClient.get<KitchenStaffStationAssignment[]>('/admin/kitchen/staff-stations');
+  return data;
+}
+
+export async function assignKitchenStaffStations(input: { userId: string; stationIds: string[] }) {
+  const { data } = await apiClient.patch<KitchenStaffStationAssignment[]>('/admin/kitchen/staff-stations', input);
+  return data;
+}
+
+export async function previewKitchenTicket(id: string) {
+  const { data } = await apiClient.get<KitchenTicketPreview>(`/admin/kitchen/tickets/${id}/preview`);
   return data;
 }
 

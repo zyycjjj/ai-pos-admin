@@ -239,6 +239,8 @@ export type KitchenStation = {
   status: 'ACTIVE' | 'INACTIVE';
   sortOrder: number;
   isDefault: boolean;
+  warningMinutes: number;
+  overdueMinutes: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -259,6 +261,7 @@ export type KitchenTicket = {
     status: string;
     total: number;
     createdAt: string;
+    table: { id: string; name: string } | null;
   };
   items: Array<{
     id: string;
@@ -275,8 +278,48 @@ export type KitchenTicket = {
   completedAt: string | null;
   cancelledAt: string | null;
   cancelReason: string | null;
+  urgent: boolean;
+  rushReason: string | null;
+  rushedAt: string | null;
+  waitMinutes: number;
+  cookMinutes: number | null;
+  slaStatus: 'NORMAL' | 'WARNING' | 'OVERDUE';
   createdAt: string;
   updatedAt: string;
+};
+
+export type KitchenRouteSummary = {
+  unroutedProductCount: number;
+  unroutedCategoryCount: number;
+  unroutedProducts: Array<{ id: string; name: string; categoryName: string | null }>;
+  unroutedCategories: Array<{ id: string; name: string }>;
+  routes: Array<{
+    id: string;
+    routeType: PrinterRouteType;
+    targetId: string;
+    documentType: PrintDocumentType;
+    printerId: string;
+    printerName: string | null;
+  }>;
+};
+
+export type KitchenStaffStationAssignment = {
+  storeUserId: string;
+  userId: string;
+  email: string;
+  name: string | null;
+  role: StoreRole;
+  stations: KitchenStation[];
+};
+
+export type KitchenTicketPreview = {
+  ticketId: string;
+  mode: KitchenPrintMode;
+  stationName: string;
+  tableName: string | null;
+  orderNo: string;
+  items: Array<{ id: string; name: string; quantity: number; modifiers: string[]; note: string | null }>;
+  textPreview: string;
 };
 
 export type PrinterType = 'RECEIPT' | 'KITCHEN' | 'MULTI_PURPOSE';

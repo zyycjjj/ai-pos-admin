@@ -1109,7 +1109,7 @@ tr:hover td {
 }
 
 .kitchen-station-form {
-  grid-template-columns: minmax(0, 1fr) 96px 92px 100px 112px;
+  grid-template-columns: minmax(0, 1fr) 88px 72px 74px 74px 92px 112px;
   gap: 10px;
   margin-bottom: 0;
 }
@@ -1168,6 +1168,35 @@ tr:hover td {
   gap: 12px;
   background: #ffffff;
   padding: 16px;
+}
+
+.kitchen-route-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #66736b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.station-row select[multiple] {
+  min-width: 220px;
+  min-height: 76px;
+}
+
+.preview-dialog {
+  max-width: 520px;
+}
+
+.ticket-preview-text {
+  padding: 14px;
+  border-radius: 8px;
+  background: #17211b;
+  color: #f8faf7;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .printer-ops-grid {
