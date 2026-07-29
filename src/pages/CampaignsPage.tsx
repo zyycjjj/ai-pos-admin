@@ -136,7 +136,10 @@ export function CampaignsPage() {
             <tbody>
               {visibleCampaigns.map((campaign) => (
                 <tr key={campaign.id}>
-                  <td>{campaign.name}</td>
+                  <td>
+                    <strong>{campaign.name}</strong>
+                    <AiCampaignMetadata campaign={campaign} t={t} />
+                  </td>
                   <td>{formatStatusLabel(t, campaign.type)}</td>
                   <td>{campaign.discountType === 'fixed_amount' ? money.format(campaign.discountValue ?? 0) : `${campaign.discountValue ?? 0}%`}</td>
                   <td>{campaign.promoCode ?? '-'}</td>
@@ -202,4 +205,19 @@ function formatValidPeriod(campaign: CampaignDraft) {
 
 function isUsageWarning(campaign: CampaignDraft) {
   return Boolean(campaign.usageLimit && campaign.usageLimit > 0 && campaign.usageCount / campaign.usageLimit >= 0.8);
+}
+
+function AiCampaignMetadata({ campaign, t }: { campaign: CampaignDraft; t: (key: string) => string }) {
+  const metadata = campaign.aiMetadata;
+  if (!metadata?.aiGenerated) return null;
+  const impact = metadata.aiExpectedImpact && 'description' in metadata.aiExpectedImpact ? metadata.aiExpectedImpact as { label?: string; description?: string } : null;
+  return (
+    <div className="field-hint">
+      <span className="status-pill">{t('campaigns.aiGenerated')}</span>
+      <span> {metadata.aiRecommendationType ?? 'AI'} · {metadata.aiEvidenceCount} {t('campaigns.aiEvidence')}</span>
+      {metadata.aiRequiresManualCompletion ? <span className="warning-copy"> · {t('campaigns.aiNeedsReview')}</span> : null}
+      {metadata.aiReason ? <small>{metadata.aiReason}</small> : null}
+      {impact?.description ? <small>{impact.label ? `${impact.label}: ` : ''}{impact.description}</small> : null}
+    </div>
+  );
 }

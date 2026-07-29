@@ -440,8 +440,35 @@ export type CampaignDraft = {
   discountTotal: number;
   timeWindow: string | null;
   category: string | null;
+  aiMetadata: AiCampaignDraftMetadata | null;
   status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED' | 'ARCHIVED';
   createdAt: string;
+};
+
+export type AiCampaignRecommendationType =
+  | 'CUSTOMER_REACTIVATION'
+  | 'TOP_CUSTOMER_REWARD'
+  | 'LOW_SELLING_PRODUCT_PROMO'
+  | 'AOV_THRESHOLD_PROMO'
+  | 'OFF_PEAK_PROMO'
+  | 'KITCHEN_LOAD_BALANCE';
+
+export type AiCampaignExpectedImpact = {
+  label: string;
+  description: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+};
+
+export type AiCampaignDraftMetadata = {
+  aiGenerated: boolean;
+  aiSource: string | null;
+  aiRecommendationType: AiCampaignRecommendationType | string | null;
+  aiRecommendationId: string | null;
+  aiReason: string | null;
+  aiEvidenceCount: number;
+  aiExpectedImpact: AiCampaignExpectedImpact | Record<string, unknown> | null;
+  aiCreatedAt: string | null;
+  aiRequiresManualCompletion: boolean;
 };
 
 export type AiBusinessDailyEvidence = {
@@ -455,16 +482,44 @@ export type AiBusinessDailyEvidence = {
 
 export type AiBusinessDailyRecommendation = {
   id: string;
-  type: 'SALES' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN' | 'REFUND' | 'DISCOUNT' | 'TABLE';
+  type: 'SALES' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN' | 'REFUND' | 'DISCOUNT' | 'TABLE' | AiCampaignRecommendationType;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   title: string;
+  goal?: string;
   reason: string;
+  target?: {
+    type: string;
+    label: string;
+    estimatedCustomerCount?: number;
+    productId?: string;
+    stationId?: string;
+  };
+  offer?: {
+    campaignType: CampaignDraft['type'];
+    discountType?: CampaignDraft['discountType'];
+    discountValue?: number;
+    threshold?: number;
+    suggestedDurationDays: number;
+    promoCode?: string;
+    productId?: string;
+    timeWindow?: string;
+    requiresManualCompletion?: boolean;
+  };
+  expectedImpact?: AiCampaignExpectedImpact;
   evidenceIds: string[];
   action: {
     kind: 'NONE' | 'CREATE_CAMPAIGN_DRAFT';
     label: string;
     campaignTemplate?: 'CUSTOMER_REACTIVATION' | 'TOP_CUSTOMER_REWARD' | 'LOW_SELLING_PRODUCT_PROMO' | 'THRESHOLD_DISCOUNT' | 'LUNCH_TIME_PROMO';
   };
+};
+
+export type AiCampaignRecommendationResponse = {
+  range: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'custom' };
+  items: AiBusinessDailyRecommendation[];
+  evidence: AiBusinessDailyEvidence[];
+  fallback: boolean;
+  generatedAt: string;
 };
 
 export type AiBusinessDailyReport = {

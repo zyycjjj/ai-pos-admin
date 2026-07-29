@@ -3,6 +3,8 @@ import type {
   AiDraft,
   AiBusinessDailyReport,
   AiBusinessDailyRecommendation,
+  AiCampaignRecommendationResponse,
+  AiCampaignRecommendationType,
   AnalyticsContext,
   AnalyticsFilters,
   AdminCategory,
@@ -83,6 +85,7 @@ export type AiBusinessDailyFilters = {
   from?: string;
   to?: string;
   timezone?: string;
+  type?: AiCampaignRecommendationType;
 };
 
 export async function fetchAiBusinessDaily(filters: AiBusinessDailyFilters) {
@@ -91,11 +94,37 @@ export async function fetchAiBusinessDaily(filters: AiBusinessDailyFilters) {
 }
 
 export async function fetchAiRecommendations(filters: AiBusinessDailyFilters) {
-  const { data } = await apiClient.get<AiBusinessDailyRecommendation[]>('/admin/ai/recommendations', { params: filters });
+  const { data } = await apiClient.get<AiCampaignRecommendationResponse>('/admin/ai/recommendations', { params: filters });
   return data;
 }
 
-export async function createAiCampaignDraft(input: Pick<AiBusinessDailyRecommendation, 'id' | 'type' | 'title' | 'reason'> & { campaignTemplate?: AiBusinessDailyRecommendation['action']['campaignTemplate'] }) {
+export async function createAiCampaignDraft(input: {
+  recommendationId: string;
+  preset?: AiBusinessDailyFilters['preset'];
+  from?: string;
+  to?: string;
+  timezone?: string;
+  recommendationType?: AiCampaignRecommendationType;
+  adjustments?: {
+    title?: string;
+    discountValue?: number;
+    threshold?: number;
+    durationDays?: number;
+  };
+}) {
+  const { data } = await apiClient.post<{ campaign: CampaignDraft; aiMetadata: CampaignDraft['aiMetadata']; status: CampaignDraft['status'] }>('/admin/ai/campaign-drafts', {
+    recommendationId: input.recommendationId,
+    preset: input.preset,
+    from: input.from,
+    to: input.to,
+    timezone: input.timezone,
+    recommendationType: input.recommendationType,
+    adjustments: input.adjustments,
+  });
+  return data;
+}
+
+export async function createLegacyAiCampaignDraft(input: Pick<AiBusinessDailyRecommendation, 'id' | 'type' | 'title' | 'reason'> & { campaignTemplate?: AiBusinessDailyRecommendation['action']['campaignTemplate'] }) {
   const { data } = await apiClient.post<CampaignDraft>('/admin/ai/campaign-drafts', {
     recommendationId: input.id,
     type: input.type,
