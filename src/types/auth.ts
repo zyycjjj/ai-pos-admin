@@ -1,4 +1,4 @@
-export type StoreRole = 'OWNER' | 'MANAGER' | 'CASHIER' | 'KITCHEN' | 'STAFF';
+export type StoreRole = 'OWNER' | 'MANAGER' | 'CASHIER' | 'KITCHEN' | 'WAITER' | 'STAFF';
 
 export type AuthUser = {
   id: string;

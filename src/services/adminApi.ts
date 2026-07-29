@@ -48,6 +48,7 @@ import type {
   CustomerReportItem,
   ItemsReport,
   PaymentReportItem,
+  PermissionPolicy,
   ReportPreset,
   ReportSummary,
   ShiftReportItem,
@@ -236,6 +237,21 @@ export async function updateStaffRole(id: string, role: Exclude<StoreRole, 'OWNE
 
 export async function disableStaff(id: string, disabled: boolean) {
   const { data } = await apiClient.patch<StaffMember>(`/admin/staff/${id}/disable`, { disabled });
+  return data;
+}
+
+export async function resetStaffPin(id: string, pin: string) {
+  const { data } = await apiClient.post<{ id: string; userId: string; pinSet: boolean }>(`/admin/staff/${id}/reset-pin`, { pin });
+  return data;
+}
+
+export async function fetchPermissionPolicy() {
+  const { data } = await apiClient.get<PermissionPolicy>('/admin/permission-policy');
+  return data;
+}
+
+export async function updatePermissionPolicy(input: Partial<PermissionPolicy>) {
+  const { data } = await apiClient.patch<PermissionPolicy>('/admin/permission-policy', input);
   return data;
 }
 

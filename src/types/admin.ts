@@ -195,6 +195,16 @@ export type StaffMember = {
   name: string | null;
   role: StoreRole;
   status: 'ACTIVE' | 'DISABLED';
+  pinSet?: boolean;
+};
+
+export type PermissionPolicy = {
+  refundRequiresApproval: boolean;
+  voidRequiresApproval: boolean;
+  preparedItemCancelRequiresApproval: boolean;
+  manualDiscountApprovalThreshold: number;
+  cashOutApprovalThreshold: number;
+  refundApprovalThreshold: number;
 };
 
 export type AdminProduct = {
