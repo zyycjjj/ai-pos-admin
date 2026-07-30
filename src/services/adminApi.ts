@@ -4,6 +4,8 @@ import type {
   AiBusinessDailyReport,
   AiBusinessDailyRecommendation,
   AiBossDashboardReport,
+  AiBusinessQueryHistoryResponse,
+  AiBusinessQueryResponse,
   AiWeeklyInsightReport,
   AiCampaignRecommendationResponse,
   AiCampaignRecommendationType,
@@ -112,6 +114,22 @@ export async function fetchAiBossDashboard(filters: AiBossDashboardFilters = {})
 
 export async function fetchAiWeeklyInsight(filters: { weekStart?: string; timezone?: string } = {}) {
   const { data } = await apiClient.get<AiWeeklyInsightReport>('/admin/ai/weekly-insight', { params: filters });
+  return data;
+}
+
+export async function askAiBusinessQuery(input: {
+  question: string;
+  preset?: AiBusinessDailyFilters['preset'];
+  from?: string;
+  to?: string;
+  timezone?: string;
+}) {
+  const { data } = await apiClient.post<AiBusinessQueryResponse>('/admin/ai/query', input);
+  return data;
+}
+
+export async function fetchAiBusinessQueryHistory() {
+  const { data } = await apiClient.get<AiBusinessQueryHistoryResponse>('/admin/ai/query-history');
   return data;
 }
 

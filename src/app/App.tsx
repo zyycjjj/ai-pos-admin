@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AdminLayout } from '../layouts/AdminLayout';
 import { AiCenterPage } from '../pages/AiCenterPage';
+import { AiAskPage } from '../pages/AiAskPage';
 import { AiDailyPage } from '../pages/AiDailyPage';
 import { AiWeeklyPage } from '../pages/AiWeeklyPage';
 import { AnalyticsPage } from '../pages/AnalyticsPage';
@@ -63,6 +64,7 @@ export function App() {
               <Route path="/campaigns" element={<CampaignsPage />} />
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/customer-segments" element={<CustomerSegmentsPage />} />
+              <Route path="/ai-ask" element={<AiAskPage />} />
               <Route path="/ai-center" element={<AiCenterPage />} />
               <Route path="/ai-daily" element={<AiDailyPage />} />
               <Route path="/ai-weekly" element={<AiWeeklyPage />} />

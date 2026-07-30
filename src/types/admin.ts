@@ -601,6 +601,49 @@ export type AiWeeklyInsightReport = {
   generatedAt: string;
 };
 
+export type AiBusinessQueryIntent =
+  | 'SALES_ANALYSIS'
+  | 'REFUND_ANALYSIS'
+  | 'PRODUCT_ANALYSIS'
+  | 'CUSTOMER_ANALYSIS'
+  | 'CAMPAIGN_ANALYSIS'
+  | 'KITCHEN_ANALYSIS'
+  | 'TABLE_ANALYSIS'
+  | 'APPROVAL_ANALYSIS'
+  | 'GENERAL_BUSINESS_SUMMARY'
+  | 'UNSUPPORTED';
+
+export type AiBusinessQueryResponse = {
+  question: string;
+  intent: AiBusinessQueryIntent;
+  range: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'custom' };
+  answer: {
+    headline: string;
+    summary: string;
+    details: Array<{ title: string; text: string; evidenceIds: string[] }>;
+    limitations: string[];
+  };
+  evidence: AiBusinessDailyEvidence[];
+  suggestedActions: Array<{
+    kind: 'VIEW_REPORT' | 'VIEW_PRODUCT' | 'VIEW_CUSTOMER' | 'VIEW_CAMPAIGNS' | 'CREATE_CAMPAIGN_DRAFT' | 'VIEW_KITCHEN' | 'VIEW_TABLES';
+    label: string;
+    href?: string;
+    evidenceIds?: string[];
+  }>;
+  fallback: boolean;
+  generatedAt: string;
+};
+
+export type AiBusinessQueryHistoryResponse = {
+  items: Array<{
+    id: string;
+    question: string;
+    intent: AiBusinessQueryIntent;
+    headline: string;
+    createdAt: string;
+  }>;
+};
+
 export type CustomerSegmentRuleJson = {
   minOrderCount?: number;
   maxOrderCount?: number;
