@@ -19,6 +19,7 @@ const navItems = [
   { to: '/customer-segments', labelKey: 'nav.customerSegments', Icon: Tags },
   { to: '/campaigns', labelKey: 'nav.campaigns', Icon: Megaphone },
   { to: '/ai-daily', labelKey: 'nav.aiDaily', Icon: Sparkles },
+  { to: '/ai-weekly', labelKey: 'nav.aiWeekly', Icon: Sparkles },
   { to: '/ai-center', labelKey: 'nav.aiCenter', Icon: Sparkles },
 ];
 

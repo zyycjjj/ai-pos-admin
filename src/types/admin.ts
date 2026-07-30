@@ -473,7 +473,7 @@ export type AiCampaignDraftMetadata = {
 
 export type AiBusinessDailyEvidence = {
   id: string;
-  type: 'METRIC' | 'ORDER' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN' | 'REFUND' | 'DISCOUNT' | 'TABLE' | 'SHIFT' | 'APPROVAL';
+  type: 'METRIC' | 'ORDER' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN' | 'REFUND' | 'DISCOUNT' | 'TABLE' | 'SHIFT' | 'APPROVAL' | 'TREND' | 'SCORE' | 'SALES';
   title: string;
   value?: number | string | null;
   refId?: string | null;
@@ -539,6 +539,64 @@ export type AiBusinessDailyReport = {
   evidence: AiBusinessDailyEvidence[];
   recommendations: AiBusinessDailyRecommendation[];
   generatedBy: string;
+  fallback: boolean;
+  generatedAt: string;
+};
+
+export type AiTrendComparison = {
+  current: number;
+  previous: number;
+  changeAmount: number;
+  changeRate: number;
+  direction: 'UP' | 'DOWN' | 'FLAT';
+};
+
+export type AiBossSection = { text: string; evidenceIds: string[] };
+
+export type AiBossDashboardReport = {
+  range: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'thisMonth' };
+  headline: string;
+  healthScore: number;
+  scoreBreakdown: {
+    total: number;
+    salesScore: number;
+    refundScore: number;
+    customerScore: number;
+    kitchenScore: number;
+    campaignScore: number;
+    tableScore: number;
+  };
+  trend: Record<
+    'netSales' | 'grossSales' | 'orderCount' | 'averageOrderValue' | 'refundTotal' | 'discountTotal' | 'newCustomerCount' | 'repeatCustomerCount' | 'repeatRate' | 'kitchenOverdueRate' | 'urgentTicketCount' | 'tableOrderCount' | 'managerApprovalCount',
+    AiTrendComparison
+  >;
+  sections: {
+    sales: AiBusinessDailyReport['metrics']['sales'];
+    products: AiBusinessDailyReport['metrics']['product'];
+    customers: AiBusinessDailyReport['metrics']['customer'];
+    campaigns: AiBusinessDailyReport['metrics']['campaign'];
+    kitchen: AiBusinessDailyReport['metrics']['kitchen'] & { overdueRate: number };
+    tables: AiBusinessDailyReport['metrics']['table'];
+    refunds: AiBusinessDailyReport['metrics']['refundApproval'];
+  };
+  insights: AiBossSection[];
+  risks: AiBossSection[];
+  nextActions: AiBossSection[];
+  evidence: AiBusinessDailyEvidence[];
+  fallback: boolean;
+  generatedAt: string;
+};
+
+export type AiWeeklyInsightReport = {
+  week: { start: string; end: string; timezone: string };
+  headline: string;
+  summary: AiBossSection[];
+  highlights: AiBossSection[];
+  risks: AiBossSection[];
+  trendExplanations: AiBossSection[];
+  nextWeekActions: AiBossSection[];
+  campaignSuggestions: AiBossSection[];
+  evidence: AiBusinessDailyEvidence[];
   fallback: boolean;
   generatedAt: string;
 };

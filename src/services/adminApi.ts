@@ -3,6 +3,8 @@ import type {
   AiDraft,
   AiBusinessDailyReport,
   AiBusinessDailyRecommendation,
+  AiBossDashboardReport,
+  AiWeeklyInsightReport,
   AiCampaignRecommendationResponse,
   AiCampaignRecommendationType,
   AnalyticsContext,
@@ -95,6 +97,21 @@ export async function fetchAiBusinessDaily(filters: AiBusinessDailyFilters) {
 
 export async function fetchAiRecommendations(filters: AiBusinessDailyFilters) {
   const { data } = await apiClient.get<AiCampaignRecommendationResponse>('/admin/ai/recommendations', { params: filters });
+  return data;
+}
+
+export type AiBossDashboardFilters = {
+  preset?: 'today' | 'yesterday' | 'last7days' | 'thisMonth';
+  timezone?: string;
+};
+
+export async function fetchAiBossDashboard(filters: AiBossDashboardFilters = {}) {
+  const { data } = await apiClient.get<AiBossDashboardReport>('/admin/ai/boss-dashboard', { params: filters });
+  return data;
+}
+
+export async function fetchAiWeeklyInsight(filters: { weekStart?: string; timezone?: string } = {}) {
+  const { data } = await apiClient.get<AiWeeklyInsightReport>('/admin/ai/weekly-insight', { params: filters });
   return data;
 }
 
