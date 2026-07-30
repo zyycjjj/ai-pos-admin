@@ -6,6 +6,13 @@ import type {
   AiBossDashboardReport,
   AiBusinessQueryHistoryResponse,
   AiBusinessQueryResponse,
+  AiActionItem,
+  AiActionListResponse,
+  AiActionPriority,
+  AiActionSourceType,
+  AiActionStatus,
+  AiActionTargetType,
+  AiActionType,
   AiWeeklyInsightReport,
   AiCampaignRecommendationResponse,
   AiCampaignRecommendationType,
@@ -130,6 +137,49 @@ export async function askAiBusinessQuery(input: {
 
 export async function fetchAiBusinessQueryHistory() {
   const { data } = await apiClient.get<AiBusinessQueryHistoryResponse>('/admin/ai/query-history');
+  return data;
+}
+
+export type AiActionFilters = {
+  status?: AiActionStatus | '';
+  priority?: AiActionPriority | '';
+  sourceType?: AiActionSourceType | '';
+  actionType?: AiActionType | '';
+  take?: number;
+};
+
+export async function fetchAiActions(filters: AiActionFilters = {}) {
+  const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined));
+  const { data } = await apiClient.get<AiActionListResponse>('/admin/ai/actions', { params });
+  return data;
+}
+
+export async function createAiAction(input: {
+  sourceType: AiActionSourceType;
+  sourceId?: string | null;
+  sourceTitle?: string | null;
+  actionType: AiActionType;
+  priority?: AiActionPriority;
+  title: string;
+  description?: string | null;
+  reason?: string | null;
+  targetType?: AiActionTargetType;
+  targetId?: string | null;
+  targetUrl?: string | null;
+  payload?: Record<string, unknown>;
+  evidenceSnapshot?: unknown[];
+}) {
+  const { data } = await apiClient.post<AiActionItem>('/admin/ai/actions', input);
+  return data;
+}
+
+export async function updateAiActionStatus(id: string, input: { status: AiActionStatus; note?: string; dismissReason?: string }) {
+  const { data } = await apiClient.patch<AiActionItem>(`/admin/ai/actions/${id}`, input);
+  return data;
+}
+
+export async function createCampaignDraftFromAiAction(id: string) {
+  const { data } = await apiClient.post<{ campaign: CampaignDraft; action: AiActionItem }>(`/admin/ai/actions/${id}/create-campaign-draft`);
   return data;
 }
 

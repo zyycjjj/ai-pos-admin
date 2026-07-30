@@ -644,6 +644,62 @@ export type AiBusinessQueryHistoryResponse = {
   }>;
 };
 
+export type AiActionSourceType = 'AI_DAILY' | 'AI_WEEKLY' | 'AI_BOSS_DASHBOARD' | 'AI_ASK' | 'AI_CAMPAIGN_RECOMMENDATION' | 'MANUAL';
+export type AiActionType =
+  | 'VIEW_REPORT'
+  | 'VIEW_ORDER'
+  | 'VIEW_PRODUCT'
+  | 'VIEW_CUSTOMER'
+  | 'VIEW_CAMPAIGN'
+  | 'VIEW_KITCHEN'
+  | 'VIEW_TABLE'
+  | 'CREATE_CAMPAIGN_DRAFT'
+  | 'REVIEW_REFUND'
+  | 'REVIEW_DISCOUNT'
+  | 'REVIEW_KITCHEN_OVERDUE'
+  | 'REVIEW_CUSTOMER_REACTIVATION'
+  | 'MANUAL_NOTE';
+export type AiActionPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+export type AiActionStatus = 'OPEN' | 'DONE' | 'DISMISSED';
+export type AiActionTargetType = 'REPORT' | 'ORDER' | 'PRODUCT' | 'CUSTOMER' | 'CAMPAIGN' | 'KITCHEN_STATION' | 'TABLE' | 'AI_RECOMMENDATION' | 'NONE';
+
+export type AiActionItem = {
+  id: string;
+  sourceType: AiActionSourceType;
+  sourceId: string | null;
+  sourceTitle: string | null;
+  actionType: AiActionType;
+  priority: AiActionPriority;
+  status: AiActionStatus;
+  title: string;
+  description: string | null;
+  reason: string | null;
+  targetType: AiActionTargetType;
+  targetId: string | null;
+  targetUrl: string | null;
+  payload: unknown;
+  evidenceSnapshot: AiBusinessDailyEvidence[];
+  result: unknown;
+  createdByUserId: string;
+  assignedToUserId: string | null;
+  handledByUserId: string | null;
+  handledAt: string | null;
+  handledNote: string | null;
+  dismissReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiActionListResponse = {
+  items: AiActionItem[];
+  summary: {
+    open: number;
+    high: number;
+    done: number;
+    dismissed: number;
+  };
+};
+
 export type CustomerSegmentRuleJson = {
   minOrderCount?: number;
   maxOrderCount?: number;

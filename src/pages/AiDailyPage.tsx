@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
-import { createAiCampaignDraft, fetchAiBusinessDaily, fetchAiRecommendations, type AiBusinessDailyFilters } from '../services/adminApi';
-import type { AiBusinessDailyEvidence, AiBusinessDailyRecommendation } from '../types/admin';
+import { createAiAction, createAiCampaignDraft, fetchAiBusinessDaily, fetchAiRecommendations, type AiBusinessDailyFilters } from '../services/adminApi';
+import type { AiActionTargetType, AiActionType, AiBusinessDailyEvidence, AiBusinessDailyRecommendation } from '../types/admin';
 
 const presets: Array<[NonNullable<AiBusinessDailyFilters['preset']>, string]> = [
   ['today', 'Today'],
@@ -27,6 +27,10 @@ export function AiDailyPage() {
   }), [from, preset, to]);
   const query = useQuery({ queryKey: ['admin', 'ai-business-daily', filters], queryFn: () => fetchAiBusinessDaily(filters) });
   const recommendationsQuery = useQuery({ queryKey: ['admin', 'ai-campaign-recommendations', filters], queryFn: () => fetchAiRecommendations(filters) });
+  const saveActionMutation = useMutation({
+    mutationFn: createAiAction,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-actions'] }),
+  });
   const draftMutation = useMutation({
     mutationFn: createAiCampaignDraft,
     onSuccess: () => {
@@ -113,7 +117,9 @@ export function AiDailyPage() {
                     timezone: filters.timezone,
                     adjustments,
                   })}
+                  onSaveAction={() => saveActionMutation.mutate(actionFromRecommendation(recommendation, evidenceById, filters))}
                   saving={draftMutation.isPending}
+                  savingAction={saveActionMutation.isPending}
                 />
               ))}
             </div>
@@ -150,14 +156,18 @@ function RecommendationCard({
   evidenceById,
   filters,
   onCreateDraft,
+  onSaveAction,
   recommendation,
   saving,
+  savingAction,
 }: {
   recommendation: AiBusinessDailyRecommendation;
   evidenceById: Map<string, AiBusinessDailyEvidence>;
   filters: AiBusinessDailyFilters;
   saving: boolean;
+  savingAction: boolean;
   onCreateDraft: (adjustments: { title?: string; discountValue?: number; threshold?: number; durationDays?: number }) => void;
+  onSaveAction: () => void;
 }) {
   const [title, setTitle] = useState(recommendation.title);
   const [discountValue, setDiscountValue] = useState(recommendation.offer?.discountValue ?? 5);
@@ -171,7 +181,10 @@ function RecommendationCard({
           <h2>{recommendation.title}</h2>
         </div>
         {recommendation.action.kind === 'CREATE_CAMPAIGN_DRAFT' ? (
-          <button className="primary-button" disabled={saving} type="button" onClick={() => onCreateDraft({ title, discountValue, threshold: threshold || undefined, durationDays })}>Create Draft</button>
+          <span className="segmented-control">
+            <button className="primary-button" disabled={saving} type="button" onClick={() => onCreateDraft({ title, discountValue, threshold: threshold || undefined, durationDays })}>Create Draft</button>
+            <button className="secondary-button" disabled={savingAction || recommendation.evidenceIds.length === 0} type="button" onClick={onSaveAction}>Save Action</button>
+          </span>
         ) : null}
       </div>
       <small>{recommendation.type} · {filters.preset ?? 'today'}</small>
@@ -190,6 +203,65 @@ function RecommendationCard({
       <EvidenceRefs ids={recommendation.evidenceIds} evidenceById={evidenceById} />
     </article>
   );
+}
+
+function actionFromRecommendation(recommendation: AiBusinessDailyRecommendation, evidenceById: Map<string, AiBusinessDailyEvidence>, filters: AiBusinessDailyFilters) {
+  const actionType: AiActionType = recommendation.action.kind === 'CREATE_CAMPAIGN_DRAFT' ? 'CREATE_CAMPAIGN_DRAFT' : actionTypeForRecommendation(recommendation.type);
+  const evidenceSnapshot = recommendation.evidenceIds.map((id) => evidenceById.get(id)).filter((item): item is AiBusinessDailyEvidence => Boolean(item));
+  return {
+    sourceType: 'AI_CAMPAIGN_RECOMMENDATION' as const,
+    sourceId: recommendation.id,
+    sourceTitle: recommendation.title,
+    actionType,
+    priority: recommendation.priority,
+    title: recommendation.action.kind === 'CREATE_CAMPAIGN_DRAFT' ? `Create draft: ${recommendation.title}` : recommendation.title,
+    description: recommendation.goal ?? recommendation.reason,
+    reason: recommendation.reason,
+    targetType: targetTypeFor(actionType),
+    targetUrl: actionType === 'CREATE_CAMPAIGN_DRAFT' ? '/campaigns' : targetUrlFor(actionType),
+    payload: {
+      recommendationId: recommendation.id,
+      recommendationType: recommendation.type,
+      range: filters,
+      draftPayload: recommendation.offer ? {
+        campaignType: recommendation.offer.campaignType,
+        discountType: recommendation.offer.discountType,
+        discountValue: recommendation.offer.discountValue,
+        thresholdAmount: recommendation.offer.threshold,
+        suggestedDurationDays: recommendation.offer.suggestedDurationDays,
+        productId: recommendation.offer.productId,
+        promoCode: recommendation.offer.promoCode,
+        timeWindow: recommendation.offer.timeWindow,
+      } : {},
+    },
+    evidenceSnapshot,
+  };
+}
+
+function actionTypeForRecommendation(type: AiBusinessDailyRecommendation['type']): AiActionType {
+  if (type === 'PRODUCT' || type === 'LOW_SELLING_PRODUCT_PROMO') return 'VIEW_PRODUCT';
+  if (type === 'CUSTOMER' || type === 'CUSTOMER_REACTIVATION' || type === 'TOP_CUSTOMER_REWARD') return 'REVIEW_CUSTOMER_REACTIVATION';
+  if (type === 'KITCHEN' || type === 'KITCHEN_LOAD_BALANCE') return 'REVIEW_KITCHEN_OVERDUE';
+  if (type === 'REFUND') return 'REVIEW_REFUND';
+  if (type === 'DISCOUNT') return 'REVIEW_DISCOUNT';
+  if (type === 'CAMPAIGN' || type === 'AOV_THRESHOLD_PROMO' || type === 'OFF_PEAK_PROMO') return 'VIEW_CAMPAIGN';
+  return 'VIEW_REPORT';
+}
+
+function targetTypeFor(actionType: AiActionType): AiActionTargetType {
+  if (actionType === 'VIEW_PRODUCT') return 'PRODUCT';
+  if (actionType === 'REVIEW_CUSTOMER_REACTIVATION') return 'CUSTOMER';
+  if (actionType === 'REVIEW_KITCHEN_OVERDUE') return 'KITCHEN_STATION';
+  if (actionType === 'VIEW_CAMPAIGN' || actionType === 'CREATE_CAMPAIGN_DRAFT') return 'CAMPAIGN';
+  return 'REPORT';
+}
+
+function targetUrlFor(actionType: AiActionType) {
+  if (actionType === 'VIEW_PRODUCT') return '/products';
+  if (actionType === 'REVIEW_CUSTOMER_REACTIVATION') return '/customers';
+  if (actionType === 'REVIEW_KITCHEN_OVERDUE') return '/kitchen';
+  if (actionType === 'VIEW_CAMPAIGN') return '/campaigns';
+  return '/reports';
 }
 
 function formatOffer(offer: NonNullable<AiBusinessDailyRecommendation['offer']>) {

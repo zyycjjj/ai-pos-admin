@@ -1,17 +1,22 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
-import { fetchAiBossDashboard, fetchAiWeeklyInsight } from '../services/adminApi';
-import type { AiBossSection, AiBusinessDailyEvidence, AiTrendComparison } from '../types/admin';
+import { createAiAction, fetchAiBossDashboard, fetchAiWeeklyInsight } from '../services/adminApi';
+import type { AiActionPriority, AiActionTargetType, AiActionType, AiBossSection, AiBusinessDailyEvidence, AiTrendComparison } from '../types/admin';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export function AiWeeklyPage() {
+  const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(defaultWeekStart());
   const filters = useMemo(() => ({ weekStart, timezone: 'Asia/Shanghai' }), [weekStart]);
   const weeklyQuery = useQuery({ queryKey: ['admin', 'ai-weekly-insight', filters], queryFn: () => fetchAiWeeklyInsight(filters) });
   const dashboardQuery = useQuery({ queryKey: ['admin', 'ai-boss-dashboard', { preset: 'last7days' }], queryFn: () => fetchAiBossDashboard({ preset: 'last7days', timezone: 'Asia/Shanghai' }) });
+  const saveActionMutation = useMutation({
+    mutationFn: createAiAction,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-actions'] }),
+  });
 
   if (weeklyQuery.isLoading) return <LoadingState title="Generating AI Weekly Insight" />;
   if (weeklyQuery.isError || !weeklyQuery.data) return <ErrorState title="AI Weekly unavailable" description="The weekly insight could not be generated. No business data was changed." />;
@@ -70,8 +75,20 @@ export function AiWeeklyPage() {
           <SectionList title="Highlights" items={report.highlights} evidenceById={evidenceById} />
           <SectionList title="Risks" items={report.risks} evidenceById={evidenceById} />
           <SectionList title="Trend explanations" items={report.trendExplanations} evidenceById={evidenceById} />
-          <SectionList title="Next week actions" items={report.nextWeekActions} evidenceById={evidenceById} />
-          <SectionList title="Campaign suggestions" items={report.campaignSuggestions} evidenceById={evidenceById} />
+          <SectionList
+            title="Next week actions"
+            items={report.nextWeekActions}
+            evidenceById={evidenceById}
+            onSave={(item) => saveActionMutation.mutate(sectionAction('AI_WEEKLY', 'Next week actions', item, evidenceById, { week: report.week, headline: report.headline }))}
+            saving={saveActionMutation.isPending}
+          />
+          <SectionList
+            title="Campaign suggestions"
+            items={report.campaignSuggestions}
+            evidenceById={evidenceById}
+            onSave={(item) => saveActionMutation.mutate(sectionAction('AI_WEEKLY', 'Campaign suggestions', item, evidenceById, { week: report.week, headline: report.headline }, 'CREATE_CAMPAIGN_DRAFT'))}
+            saving={saveActionMutation.isPending}
+          />
         </section>
 
         <aside className="copilot-side">
@@ -86,7 +103,19 @@ export function AiWeeklyPage() {
   );
 }
 
-function SectionList({ evidenceById, items, title }: { title: string; items: AiBossSection[]; evidenceById: Map<string, AiBusinessDailyEvidence> }) {
+function SectionList({
+  evidenceById,
+  items,
+  onSave,
+  saving,
+  title,
+}: {
+  title: string;
+  items: AiBossSection[];
+  evidenceById: Map<string, AiBusinessDailyEvidence>;
+  saving?: boolean;
+  onSave?: (item: AiBossSection) => void;
+}) {
   return (
     <section className="analytics-panel">
       <div className="panel-header"><h2>{title}</h2></div>
@@ -94,11 +123,71 @@ function SectionList({ evidenceById, items, title }: { title: string; items: AiB
         {items.map((item, index) => (
           <div className="analytics-list-row" key={`${title}-${index}`}>
             <span><strong>{item.text}</strong><EvidenceRefs ids={item.evidenceIds} evidenceById={evidenceById} /></span>
+            {onSave ? <button className="secondary-button" disabled={saving || item.evidenceIds.length === 0} type="button" onClick={() => onSave(item)}>Save Action</button> : null}
           </div>
         ))}
       </div>
     </section>
   );
+}
+
+function sectionAction(
+  sourceType: 'AI_WEEKLY' | 'AI_BOSS_DASHBOARD',
+  sourceTitle: string,
+  item: AiBossSection,
+  evidenceById: Map<string, AiBusinessDailyEvidence>,
+  payload: Record<string, unknown>,
+  forcedActionType?: AiActionType,
+) {
+  const actionType = forcedActionType ?? inferSectionActionType(item.text);
+  const evidenceSnapshot = item.evidenceIds.map((id) => evidenceById.get(id)).filter((evidence): evidence is AiBusinessDailyEvidence => Boolean(evidence));
+  return {
+    sourceType,
+    sourceTitle,
+    actionType,
+    priority: inferSectionPriority(item.text, actionType),
+    title: item.text.slice(0, 140),
+    description: item.text,
+    reason: sourceTitle,
+    targetType: targetTypeFor(actionType),
+    targetUrl: targetUrlFor(actionType),
+    payload: { ...payload, sectionText: item.text },
+    evidenceSnapshot,
+  };
+}
+
+function inferSectionActionType(text: string): AiActionType {
+  const lower = text.toLowerCase();
+  if (lower.includes('campaign') || text.includes('活动') || text.includes('促销')) return 'CREATE_CAMPAIGN_DRAFT';
+  if (lower.includes('kitchen') || text.includes('后厨') || text.includes('档口')) return 'REVIEW_KITCHEN_OVERDUE';
+  if (lower.includes('refund') || text.includes('退款')) return 'REVIEW_REFUND';
+  if (lower.includes('discount') || text.includes('折扣')) return 'REVIEW_DISCOUNT';
+  if (lower.includes('customer') || text.includes('顾客') || text.includes('召回')) return 'REVIEW_CUSTOMER_REACTIVATION';
+  if (lower.includes('product') || text.includes('商品')) return 'VIEW_PRODUCT';
+  return 'VIEW_REPORT';
+}
+
+function inferSectionPriority(text: string, actionType: AiActionType): AiActionPriority {
+  const lower = text.toLowerCase();
+  if (actionType.startsWith('REVIEW_') || lower.includes('risk') || text.includes('风险')) return 'HIGH';
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT') return 'MEDIUM';
+  return 'LOW';
+}
+
+function targetTypeFor(actionType: AiActionType): AiActionTargetType {
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT' || actionType === 'VIEW_CAMPAIGN') return 'CAMPAIGN';
+  if (actionType === 'REVIEW_KITCHEN_OVERDUE' || actionType === 'VIEW_KITCHEN') return 'KITCHEN_STATION';
+  if (actionType === 'REVIEW_CUSTOMER_REACTIVATION' || actionType === 'VIEW_CUSTOMER') return 'CUSTOMER';
+  if (actionType === 'VIEW_PRODUCT') return 'PRODUCT';
+  return 'REPORT';
+}
+
+function targetUrlFor(actionType: AiActionType) {
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT' || actionType === 'VIEW_CAMPAIGN') return '/campaigns';
+  if (actionType === 'REVIEW_KITCHEN_OVERDUE' || actionType === 'VIEW_KITCHEN') return '/kitchen';
+  if (actionType === 'REVIEW_CUSTOMER_REACTIVATION' || actionType === 'VIEW_CUSTOMER') return '/customers';
+  if (actionType === 'VIEW_PRODUCT') return '/products';
+  return '/reports';
 }
 
 function EvidenceRefs({ evidenceById, ids }: { ids: string[]; evidenceById: Map<string, AiBusinessDailyEvidence> }) {

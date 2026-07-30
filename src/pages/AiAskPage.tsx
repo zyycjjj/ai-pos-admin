@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import { EmptyState, ErrorState } from '../components/PageState';
-import { askAiBusinessQuery, fetchAiBusinessQueryHistory, type AiBusinessDailyFilters } from '../services/adminApi';
-import type { AiBusinessDailyEvidence, AiBusinessQueryResponse } from '../types/admin';
+import { askAiBusinessQuery, createAiAction, fetchAiBusinessQueryHistory, type AiBusinessDailyFilters } from '../services/adminApi';
+import type { AiActionPriority, AiActionTargetType, AiActionType, AiBusinessDailyEvidence, AiBusinessQueryResponse } from '../types/admin';
 
 const presets: Array<[NonNullable<AiBusinessDailyFilters['preset']>, string]> = [
   ['today', 'Today'],
@@ -32,6 +32,10 @@ export function AiAskPage() {
   const [response, setResponse] = useState<AiBusinessQueryResponse | null>(null);
   const filters = useMemo(() => ({ preset, from: preset === 'custom' ? from : undefined, to: preset === 'custom' ? to : undefined, timezone: 'Asia/Shanghai' }), [from, preset, to]);
   const historyQuery = useQuery({ queryKey: ['admin', 'ai-business-query-history'], queryFn: fetchAiBusinessQueryHistory });
+  const saveActionMutation = useMutation({
+    mutationFn: createAiAction,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-actions'] }),
+  });
   const mutation = useMutation({
     mutationFn: askAiBusinessQuery,
     onSuccess: (data) => {
@@ -84,7 +88,7 @@ export function AiAskPage() {
 
       <div className="copilot-layout">
         <section className="copilot-main">
-          {response ? <AnswerCard response={response} evidenceById={evidenceById} /> : <EmptyState title="Ask a business question" description="Answers are scoped to the current store and cite backend evidence." />}
+          {response ? <AnswerCard response={response} evidenceById={evidenceById} onSaveAction={(action) => saveActionMutation.mutate(action)} saving={saveActionMutation.isPending} /> : <EmptyState title="Ask a business question" description="Answers are scoped to the current store and cite backend evidence." />}
         </section>
         <aside className="copilot-side">
           <section className="analytics-panel">
@@ -108,7 +112,17 @@ export function AiAskPage() {
   );
 }
 
-function AnswerCard({ evidenceById, response }: { response: AiBusinessQueryResponse; evidenceById: Map<string, AiBusinessDailyEvidence> }) {
+function AnswerCard({
+  evidenceById,
+  onSaveAction,
+  response,
+  saving,
+}: {
+  response: AiBusinessQueryResponse;
+  evidenceById: Map<string, AiBusinessDailyEvidence>;
+  saving: boolean;
+  onSaveAction: (input: Parameters<typeof createAiAction>[0]) => void;
+}) {
   return (
     <section className="analytics-panel">
       <div className="panel-header">
@@ -133,11 +147,79 @@ function AnswerCard({ evidenceById, response }: { response: AiBusinessQueryRespo
       ) : null}
       <div className="copilot-list">
         {response.suggestedActions.map((action) => (
-          action.href ? <Link className="secondary-button" key={`${action.kind}-${action.label}`} to={action.href}>{action.label}</Link> : <span className="status" key={`${action.kind}-${action.label}`}>{action.label}</span>
+          <div className="analytics-list-row" key={`${action.kind}-${action.label}`}>
+            <span><strong>{action.label}</strong><small>{action.kind} · {(action.evidenceIds ?? []).map((id) => evidenceById.get(id)?.title ?? id).join(' · ')}</small></span>
+            <span className="segmented-control">
+              {action.href ? <Link className="secondary-button" to={action.href}>Open</Link> : null}
+              <button className="secondary-button" disabled={saving || (action.evidenceIds ?? []).length === 0} type="button" onClick={() => onSaveAction(actionFromQuery(response, action, evidenceById))}>Save Action</button>
+            </span>
+          </div>
         ))}
       </div>
     </section>
   );
+}
+
+function actionFromQuery(
+  response: AiBusinessQueryResponse,
+  action: AiBusinessQueryResponse['suggestedActions'][number],
+  evidenceById: Map<string, AiBusinessDailyEvidence>,
+) {
+  const actionType = mapQueryActionType(action.kind);
+  const evidenceSnapshot = (action.evidenceIds ?? []).map((id) => evidenceById.get(id)).filter((item): item is AiBusinessDailyEvidence => Boolean(item));
+  return {
+    sourceType: 'AI_ASK' as const,
+    sourceTitle: response.question,
+    actionType,
+    priority: inferQueryPriority(response.intent, actionType),
+    title: action.label,
+    description: response.answer.summary,
+    reason: response.answer.headline,
+    targetType: targetTypeFor(actionType),
+    targetUrl: action.href ?? targetUrlFor(actionType),
+    payload: { question: response.question, intent: response.intent, range: response.range },
+    evidenceSnapshot,
+  };
+}
+
+function mapQueryActionType(kind: AiBusinessQueryResponse['suggestedActions'][number]['kind']): AiActionType {
+  const map: Record<typeof kind, AiActionType> = {
+    VIEW_REPORT: 'VIEW_REPORT',
+    VIEW_PRODUCT: 'VIEW_PRODUCT',
+    VIEW_CUSTOMER: 'VIEW_CUSTOMER',
+    VIEW_CAMPAIGNS: 'VIEW_CAMPAIGN',
+    CREATE_CAMPAIGN_DRAFT: 'CREATE_CAMPAIGN_DRAFT',
+    VIEW_KITCHEN: 'VIEW_KITCHEN',
+    VIEW_TABLES: 'VIEW_TABLE',
+  };
+  return map[kind];
+}
+
+function inferQueryPriority(intent: AiBusinessQueryResponse['intent'], actionType: AiActionType): AiActionPriority {
+  if (intent === 'REFUND_ANALYSIS' || intent === 'KITCHEN_ANALYSIS' || actionType === 'CREATE_CAMPAIGN_DRAFT') return 'HIGH';
+  if (intent === 'SALES_ANALYSIS' || intent === 'GENERAL_BUSINESS_SUMMARY') return 'MEDIUM';
+  return 'LOW';
+}
+
+function targetTypeFor(actionType: AiActionType): AiActionTargetType {
+  if (actionType === 'VIEW_REPORT') return 'REPORT';
+  if (actionType === 'VIEW_PRODUCT') return 'PRODUCT';
+  if (actionType === 'VIEW_CUSTOMER') return 'CUSTOMER';
+  if (actionType === 'VIEW_CAMPAIGN') return 'CAMPAIGN';
+  if (actionType === 'VIEW_KITCHEN') return 'KITCHEN_STATION';
+  if (actionType === 'VIEW_TABLE') return 'TABLE';
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT') return 'AI_RECOMMENDATION';
+  return 'NONE';
+}
+
+function targetUrlFor(actionType: AiActionType) {
+  if (actionType === 'VIEW_REPORT') return '/reports';
+  if (actionType === 'VIEW_PRODUCT') return '/products';
+  if (actionType === 'VIEW_CUSTOMER') return '/customers';
+  if (actionType === 'VIEW_CAMPAIGN' || actionType === 'CREATE_CAMPAIGN_DRAFT') return '/campaigns';
+  if (actionType === 'VIEW_KITCHEN') return '/kitchen';
+  if (actionType === 'VIEW_TABLE') return '/tables';
+  return undefined;
 }
 
 function EvidenceRefs({ evidenceById, ids }: { ids: string[]; evidenceById: Map<string, AiBusinessDailyEvidence> }) {

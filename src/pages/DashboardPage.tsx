@@ -1,16 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
 import { ErrorState, LoadingState } from '../components/PageState';
-import { fetchAiBossDashboard, fetchDashboard } from '../services/adminApi';
+import { createAiAction, fetchAiBossDashboard, fetchDashboard } from '../services/adminApi';
 import { useAdminI18n } from '../i18n';
+import type { AiActionPriority, AiActionTargetType, AiActionType, AiBossSection, AiBusinessDailyEvidence } from '../types/admin';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export function DashboardPage() {
+  const queryClient = useQueryClient();
   const { t } = useAdminI18n();
   const query = useQuery({ queryKey: ['admin', 'dashboard'], queryFn: fetchDashboard });
   const bossQuery = useQuery({ queryKey: ['admin', 'ai-boss-dashboard', { preset: 'last7days' }], queryFn: () => fetchAiBossDashboard({ preset: 'last7days', timezone: 'Asia/Shanghai' }) });
+  const saveActionMutation = useMutation({
+    mutationFn: createAiAction,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-actions'] }),
+  });
 
   if (query.isLoading) {
     return <LoadingState title={t('dashboard.loading')} />;
@@ -25,6 +31,7 @@ export function DashboardPage() {
     { label: t('dashboard.avgTicket'), value: money.format(query.data.avgTicket) },
     { label: t('dashboard.activeProducts'), value: String(query.data.activeProducts) },
   ];
+  const bossEvidenceById = new Map((bossQuery.data?.evidence ?? []).map((item) => [item.id, item]));
 
   return (
     <section>
@@ -68,8 +75,18 @@ export function DashboardPage() {
             </div>
             <p className="muted-copy">{bossQuery.data.headline}</p>
             <div className="copilot-layout" style={{ marginTop: 16 }}>
-              <MiniList title={t('dashboard.topRisks')} items={bossQuery.data.risks.slice(0, 3)} />
-              <MiniList title={t('dashboard.nextActions')} items={bossQuery.data.nextActions.slice(0, 3)} />
+              <MiniList
+                title={t('dashboard.topRisks')}
+                items={bossQuery.data.risks.slice(0, 3)}
+                onSave={(item) => saveActionMutation.mutate(sectionAction('Top risks', item, bossEvidenceById, { range: bossQuery.data.range, headline: bossQuery.data.headline }))}
+                saving={saveActionMutation.isPending}
+              />
+              <MiniList
+                title={t('dashboard.nextActions')}
+                items={bossQuery.data.nextActions.slice(0, 3)}
+                onSave={(item) => saveActionMutation.mutate(sectionAction('Next actions', item, bossEvidenceById, { range: bossQuery.data.range, headline: bossQuery.data.headline }))}
+                saving={saveActionMutation.isPending}
+              />
             </div>
           </>
         ) : null}
@@ -78,7 +95,7 @@ export function DashboardPage() {
   );
 }
 
-function MiniList({ items, title }: { title: string; items: Array<{ text: string }> }) {
+function MiniList({ items, onSave, saving, title }: { title: string; items: AiBossSection[]; saving?: boolean; onSave?: (item: AiBossSection) => void }) {
   return (
     <section>
       <h3>{title}</h3>
@@ -86,11 +103,69 @@ function MiniList({ items, title }: { title: string; items: Array<{ text: string
         {items.map((item, index) => (
           <div className="analytics-list-row" key={`${title}-${index}`}>
             <span>{item.text}</span>
+            {onSave ? <button className="secondary-button" disabled={saving || item.evidenceIds.length === 0} type="button" onClick={() => onSave(item)}>Save</button> : null}
           </div>
         ))}
       </div>
     </section>
   );
+}
+
+function sectionAction(
+  sourceTitle: string,
+  item: AiBossSection,
+  evidenceById: Map<string, AiBusinessDailyEvidence>,
+  payload: Record<string, unknown>,
+) {
+  const actionType = inferActionType(item.text);
+  const evidenceSnapshot = item.evidenceIds.map((id) => evidenceById.get(id)).filter((evidence): evidence is AiBusinessDailyEvidence => Boolean(evidence));
+  return {
+    sourceType: 'AI_BOSS_DASHBOARD' as const,
+    sourceTitle,
+    actionType,
+    priority: inferPriority(item.text, actionType),
+    title: item.text.slice(0, 140),
+    description: item.text,
+    reason: sourceTitle,
+    targetType: targetTypeFor(actionType),
+    targetUrl: targetUrlFor(actionType),
+    payload: { ...payload, sectionText: item.text },
+    evidenceSnapshot,
+  };
+}
+
+function inferActionType(text: string): AiActionType {
+  const lower = text.toLowerCase();
+  if (lower.includes('campaign') || text.includes('活动') || text.includes('促销')) return 'CREATE_CAMPAIGN_DRAFT';
+  if (lower.includes('kitchen') || text.includes('后厨') || text.includes('档口')) return 'REVIEW_KITCHEN_OVERDUE';
+  if (lower.includes('refund') || text.includes('退款')) return 'REVIEW_REFUND';
+  if (lower.includes('discount') || text.includes('折扣')) return 'REVIEW_DISCOUNT';
+  if (lower.includes('customer') || text.includes('顾客') || text.includes('召回')) return 'REVIEW_CUSTOMER_REACTIVATION';
+  if (lower.includes('product') || text.includes('商品')) return 'VIEW_PRODUCT';
+  return 'VIEW_REPORT';
+}
+
+function inferPriority(text: string, actionType: AiActionType): AiActionPriority {
+  const lower = text.toLowerCase();
+  if (actionType.startsWith('REVIEW_') || lower.includes('risk') || text.includes('风险')) return 'HIGH';
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT') return 'MEDIUM';
+  return 'LOW';
+}
+
+function targetTypeFor(actionType: AiActionType): AiActionTargetType {
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT' || actionType === 'VIEW_CAMPAIGN') return 'CAMPAIGN';
+  if (actionType === 'REVIEW_KITCHEN_OVERDUE' || actionType === 'VIEW_KITCHEN') return 'KITCHEN_STATION';
+  if (actionType === 'REVIEW_CUSTOMER_REACTIVATION' || actionType === 'VIEW_CUSTOMER') return 'CUSTOMER';
+  if (actionType === 'VIEW_PRODUCT') return 'PRODUCT';
+  return 'REPORT';
+}
+
+function targetUrlFor(actionType: AiActionType) {
+  if (actionType === 'CREATE_CAMPAIGN_DRAFT' || actionType === 'VIEW_CAMPAIGN') return '/campaigns';
+  if (actionType === 'REVIEW_KITCHEN_OVERDUE' || actionType === 'VIEW_KITCHEN') return '/kitchen';
+  if (actionType === 'REVIEW_CUSTOMER_REACTIVATION' || actionType === 'VIEW_CUSTOMER') return '/customers';
+  if (actionType === 'VIEW_PRODUCT') return '/products';
+  return '/reports';
 }
 
 function formatTrend(value: number) {
