@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
-import { EmptyState, ErrorState } from '../components/PageState';
-import { askAiBusinessQuery, createAiAction, fetchAiBusinessQueryHistory, type AiBusinessDailyFilters } from '../services/adminApi';
-import type { AiActionPriority, AiActionTargetType, AiActionType, AiBusinessDailyEvidence, AiBusinessQueryResponse } from '../types/admin';
+import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
+import { askAiBusinessQuery, createAiAction, fetchAiConversation, fetchAiConversations, type AiBusinessDailyFilters } from '../services/adminApi';
+import type { AiActionPriority, AiActionTargetType, AiActionType, AiBusinessDailyEvidence, AiBusinessQueryIntent, AiBusinessQueryResponse, AiConversationMessage } from '../types/admin';
 
 const presets: Array<[NonNullable<AiBusinessDailyFilters['preset']>, string]> = [
   ['today', 'Today'],
@@ -14,175 +14,210 @@ const presets: Array<[NonNullable<AiBusinessDailyFilters['preset']>, string]> = 
 ];
 
 const promptSuggestions = [
-  '今天整体怎么样？',
   '今天为什么退款变多了？',
-  '哪个商品最近卖得最好？',
+  '具体是哪几笔？',
+  '这些有什么共同点？',
+  '那我该怎么办？',
+  '帮我保存成待办',
   '哪个顾客值得召回？',
-  '哪个活动效果最好？',
-  '哪个档口最慢？',
-  '本周营业额为什么变化？',
+  '生成一个召回活动草稿',
 ];
 
 export function AiAskPage() {
   const queryClient = useQueryClient();
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [question, setQuestion] = useState(promptSuggestions[0]);
   const [preset, setPreset] = useState<NonNullable<AiBusinessDailyFilters['preset']>>('today');
   const [from, setFrom] = useState(new Date().toISOString().slice(0, 10));
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
-  const [response, setResponse] = useState<AiBusinessQueryResponse | null>(null);
   const filters = useMemo(() => ({ preset, from: preset === 'custom' ? from : undefined, to: preset === 'custom' ? to : undefined, timezone: 'Asia/Shanghai' }), [from, preset, to]);
-  const historyQuery = useQuery({ queryKey: ['admin', 'ai-business-query-history'], queryFn: fetchAiBusinessQueryHistory });
+  const conversationsQuery = useQuery({ queryKey: ['admin', 'ai-conversations'], queryFn: fetchAiConversations });
+  const threadQuery = useQuery({ queryKey: ['admin', 'ai-conversation', activeConversationId], queryFn: () => fetchAiConversation(activeConversationId as string), enabled: Boolean(activeConversationId) });
   const saveActionMutation = useMutation({
     mutationFn: createAiAction,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-actions'] }),
   });
-  const mutation = useMutation({
+  const askMutation = useMutation({
     mutationFn: askAiBusinessQuery,
     onSuccess: (data) => {
-      setResponse(data);
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-business-query-history'] });
+      setActiveConversationId(data.conversationId);
+      setQuestion('');
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-conversations'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'ai-conversation', data.conversationId] });
     },
   });
 
-  const evidenceById = new Map((response?.evidence ?? []).map((item) => [item.id, item]));
   const ask = () => {
     if (!question.trim()) return;
-    mutation.mutate({ question: question.trim(), ...filters });
+    askMutation.mutate({ question: question.trim(), conversationId: activeConversationId, ...filters });
+  };
+  const startNew = () => {
+    setActiveConversationId(null);
+    setQuestion(promptSuggestions[0]);
   };
 
   return (
     <section className="copilot-page">
       <div className="page-header row">
         <div>
-          <span className="eyebrow">AI Operations · Natural language query</span>
+          <span className="eyebrow">AI Operations · Conversation memory</span>
           <h1>AI Business Ask</h1>
         </div>
-        <span className="analytics-period">{response ? `${response.range.from} — ${response.range.to} · ${response.fallback ? 'Fallback' : 'AI'} · ${new Date(response.generatedAt).toLocaleString()}` : 'Evidence-backed answers'}</span>
+        <button className="secondary-button" type="button" onClick={startNew}>New conversation</button>
       </div>
 
-      <section className="analytics-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Ask about this store</span>
-            <h2>Question</h2>
-          </div>
-          <button className="primary-button" disabled={mutation.isPending || !question.trim()} type="button" onClick={ask}>{mutation.isPending ? 'Asking...' : 'Ask'}</button>
-        </div>
-        <textarea rows={3} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about sales, refunds, products, customers, campaigns, kitchen, tables, or approvals." />
-        <div className="analytics-filter-bar">
-          <div className="segmented-control">
-            {presets.map(([value, label]) => <button className={preset === value ? 'active' : ''} key={value} type="button" onClick={() => setPreset(value)}>{label}</button>)}
-          </div>
-          {preset === 'custom' ? (
-            <>
-              <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
-              <input type="date" value={to} onChange={(event) => setTo(event.target.value)} />
-            </>
-          ) : null}
-        </div>
-        <div className="segmented-control">
-          {promptSuggestions.map((prompt) => <button key={prompt} type="button" onClick={() => setQuestion(prompt)}>{prompt}</button>)}
-        </div>
-        {mutation.isError ? <p className="muted-copy">AI Business Ask is unavailable. Reports and Dashboard remain available.</p> : null}
-      </section>
-
       <div className="copilot-layout">
-        <section className="copilot-main">
-          {response ? <AnswerCard response={response} evidenceById={evidenceById} onSaveAction={(action) => saveActionMutation.mutate(action)} saving={saveActionMutation.isPending} /> : <EmptyState title="Ask a business question" description="Answers are scoped to the current store and cite backend evidence." />}
-        </section>
         <aside className="copilot-side">
           <section className="analytics-panel">
-            <div className="panel-header"><h2>Query History</h2></div>
-            {historyQuery.isError ? <ErrorState title="History unavailable" description="Recent query history could not be loaded." /> : null}
-            {(historyQuery.data?.items ?? []).map((item) => (
-              <button className="analytics-list-row" key={item.id} type="button" onClick={() => setQuestion(item.question)}>
-                <span><strong>{item.question}</strong><small>{item.intent} · {new Date(item.createdAt).toLocaleString()}</small></span>
-              </button>
-            ))}
-            {historyQuery.data?.items.length === 0 ? <p className="muted-copy">No query history yet.</p> : null}
+            <div className="panel-header"><h2>Conversations</h2></div>
+            {conversationsQuery.isLoading ? <p className="muted-copy">Loading conversations...</p> : null}
+            {conversationsQuery.isError ? <ErrorState title="Conversations unavailable" description="AI Ask threads could not be loaded." /> : null}
+            <div className="copilot-list">
+              {(conversationsQuery.data?.items ?? []).map((item) => (
+                <button className={`analytics-list-row ${activeConversationId === item.id ? 'active' : ''}`} key={item.id} type="button" onClick={() => setActiveConversationId(item.id)}>
+                  <span><strong>{item.title}</strong><small>{item.lastIntent ?? 'AI_ASK'} · {new Date(item.updatedAt).toLocaleString()}</small></span>
+                </button>
+              ))}
+            </div>
+            {conversationsQuery.data?.items.length === 0 ? <p className="muted-copy">No conversation yet.</p> : null}
           </section>
+
           <section className="analytics-panel">
-            <div className="panel-header"><h2>Evidence</h2></div>
-            {(response?.evidence ?? []).map((item) => <EvidenceRow item={item} key={item.id} />)}
-            {!response ? <p className="muted-copy">Evidence appears after asking.</p> : null}
+            <div className="panel-header"><h2>Range</h2></div>
+            <div className="segmented-control">
+              {presets.map(([value, label]) => <button className={preset === value ? 'active' : ''} key={value} type="button" onClick={() => setPreset(value)}>{label}</button>)}
+            </div>
+            {preset === 'custom' ? (
+              <div className="form-grid compact-grid">
+                <label>From<input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
+                <label>To<input type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+              </div>
+            ) : null}
           </section>
         </aside>
+
+        <section className="copilot-main">
+          <section className="analytics-panel">
+            <div className="panel-header">
+              <div>
+                <span className="eyebrow">{threadQuery.data ? threadQuery.data.title : 'Ask about this store'}</span>
+                <h2>Thread</h2>
+              </div>
+              <span className="analytics-period">{activeConversationId ? 'Follow-up enabled' : 'New question'}</span>
+            </div>
+            {threadQuery.isLoading ? <LoadingState title="Loading AI conversation" /> : null}
+            {threadQuery.isError ? <ErrorState title="Conversation unavailable" description="This conversation could not be loaded for the active store." /> : null}
+            {!activeConversationId && !askMutation.data ? <EmptyState title="Start a business conversation" description="Ask an initial question, then continue with follow-ups like “具体是哪几笔？” or “那我该怎么办？”" /> : null}
+            <div className="copilot-list">
+              {(threadQuery.data?.messages ?? []).map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  onSaveAction={(input) => saveActionMutation.mutate(input)}
+                  saving={saveActionMutation.isPending}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="analytics-panel">
+            <textarea rows={3} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={activeConversationId ? 'Ask a follow-up, save as action, or create a draft campaign.' : 'Ask about sales, refunds, products, customers, campaigns, kitchen, tables, or approvals.'} />
+            <div className="panel-header">
+              <div className="segmented-control">
+                {promptSuggestions.map((prompt) => <button key={prompt} type="button" onClick={() => setQuestion(prompt)}>{prompt}</button>)}
+              </div>
+              <button className="primary-button" disabled={askMutation.isPending || !question.trim()} type="button" onClick={ask}>{askMutation.isPending ? 'Asking...' : activeConversationId ? 'Send follow-up' : 'Ask'}</button>
+            </div>
+            {askMutation.isError ? <p className="muted-copy">AI Business Ask is unavailable. Reports and Dashboard remain available.</p> : null}
+          </section>
+        </section>
       </div>
     </section>
   );
 }
 
-function AnswerCard({
-  evidenceById,
-  onSaveAction,
-  response,
-  saving,
-}: {
-  response: AiBusinessQueryResponse;
-  evidenceById: Map<string, AiBusinessDailyEvidence>;
+function MessageBubble({ message, onSaveAction, saving }: {
+  message: AiConversationMessage;
   saving: boolean;
   onSaveAction: (input: Parameters<typeof createAiAction>[0]) => void;
 }) {
+  if (message.role === 'USER') {
+    return (
+      <article className="analytics-list-row">
+        <span><strong>You</strong><small>{message.content}</small></span>
+        <span>{new Date(message.createdAt).toLocaleTimeString()}</span>
+      </article>
+    );
+  }
+  const evidence = message.evidence ?? [];
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   return (
-    <section className="analytics-panel">
+    <article className="copilot-response">
       <div className="panel-header">
         <div>
-          <span className="status active">{response.intent}</span>
-          <h2>{response.answer.headline}</h2>
+          <span className="status active">{message.resolvedIntent ?? message.intent ?? 'AI_ASK'}</span>
+          <h2>{message.answer?.headline ?? message.content}</h2>
         </div>
+        {message.contextUsed?.campaignDraftCreated ? <span className="status draft">DRAFT created</span> : message.contextUsed?.actionCreated ? <span className="status active">Action saved</span> : null}
       </div>
-      <p className="muted-copy">{response.answer.summary}</p>
+      {message.answer?.summary ? <p className="muted-copy">{message.answer.summary}</p> : null}
       <div className="copilot-list">
-        {response.answer.details.map((detail, index) => (
-          <div className="analytics-list-row" key={`${detail.title}-${index}`}>
+        {(message.answer?.details ?? []).map((detail, index) => (
+          <div className="analytics-list-row" key={`${message.id}-detail-${index}`}>
             <span><strong>{detail.title}</strong><small>{detail.text}</small><EvidenceRefs ids={detail.evidenceIds} evidenceById={evidenceById} /></span>
           </div>
         ))}
       </div>
-      {response.answer.limitations.length > 0 ? (
-        <div className="copilot-response">
-          <strong>Limitations</strong>
-          {response.answer.limitations.map((item) => <p className="muted-copy" key={item}>{item}</p>)}
+      {(message.suggestedActions ?? []).length > 0 ? (
+        <div className="copilot-list">
+          {(message.suggestedActions ?? []).map((action) => (
+            <div className="analytics-list-row" key={`${message.id}-${action.kind}-${action.label}`}>
+              <span><strong>{action.label}</strong><small>{action.kind} · {(action.evidenceIds ?? []).map((id) => evidenceById.get(id)?.title ?? id).join(' · ')}</small></span>
+              <span className="segmented-control">
+                {action.href ? <Link className="secondary-button" to={action.href}>Open</Link> : null}
+                <button className="secondary-button" disabled={saving || (action.evidenceIds ?? []).length === 0} type="button" onClick={() => onSaveAction(actionFromMessage(message, action, evidenceById))}>Save Action</button>
+              </span>
+            </div>
+          ))}
         </div>
       ) : null}
-      <div className="copilot-list">
-        {response.suggestedActions.map((action) => (
-          <div className="analytics-list-row" key={`${action.kind}-${action.label}`}>
-            <span><strong>{action.label}</strong><small>{action.kind} · {(action.evidenceIds ?? []).map((id) => evidenceById.get(id)?.title ?? id).join(' · ')}</small></span>
-            <span className="segmented-control">
-              {action.href ? <Link className="secondary-button" to={action.href}>Open</Link> : null}
-              <button className="secondary-button" disabled={saving || (action.evidenceIds ?? []).length === 0} type="button" onClick={() => onSaveAction(actionFromQuery(response, action, evidenceById))}>Save Action</button>
-            </span>
+      {evidence.length > 0 ? (
+        <details>
+          <summary>Evidence snapshot</summary>
+          <div className="copilot-list">
+            {evidence.slice(0, 8).map((item) => <EvidenceRow item={item} key={item.id} />)}
           </div>
-        ))}
-      </div>
-    </section>
+        </details>
+      ) : null}
+      {(message.answer?.limitations ?? []).map((item) => <p className="muted-copy" key={item}>{item}</p>)}
+    </article>
   );
 }
 
-function actionFromQuery(
-  response: AiBusinessQueryResponse,
-  action: AiBusinessQueryResponse['suggestedActions'][number],
+function actionFromMessage(
+  message: AiConversationMessage,
+  action: NonNullable<AiConversationMessage['suggestedActions']>[number],
   evidenceById: Map<string, AiBusinessDailyEvidence>,
 ) {
   const actionType = mapQueryActionType(action.kind);
   const evidenceSnapshot = (action.evidenceIds ?? []).map((id) => evidenceById.get(id)).filter((item): item is AiBusinessDailyEvidence => Boolean(item));
   return {
     sourceType: 'AI_ASK' as const,
-    sourceTitle: response.question,
+    sourceId: message.id,
+    sourceTitle: message.question ?? message.content,
     actionType,
-    priority: inferQueryPriority(response.intent, actionType),
+    priority: inferQueryPriority(message.resolvedIntent ?? message.intent ?? 'GENERAL_BUSINESS_SUMMARY', actionType),
     title: action.label,
-    description: response.answer.summary,
-    reason: response.answer.headline,
+    description: message.answer?.summary,
+    reason: message.answer?.headline,
     targetType: targetTypeFor(actionType),
     targetUrl: action.href ?? targetUrlFor(actionType),
-    payload: { question: response.question, intent: response.intent, range: response.range },
+    payload: { messageId: message.id, intent: message.resolvedIntent ?? message.intent, range: message.range },
     evidenceSnapshot,
   };
 }
 
-function mapQueryActionType(kind: AiBusinessQueryResponse['suggestedActions'][number]['kind']): AiActionType {
+function mapQueryActionType(kind: NonNullable<AiConversationMessage['suggestedActions']>[number]['kind']): AiActionType {
   const map: Record<typeof kind, AiActionType> = {
     VIEW_REPORT: 'VIEW_REPORT',
     VIEW_PRODUCT: 'VIEW_PRODUCT',
@@ -195,7 +230,7 @@ function mapQueryActionType(kind: AiBusinessQueryResponse['suggestedActions'][nu
   return map[kind];
 }
 
-function inferQueryPriority(intent: AiBusinessQueryResponse['intent'], actionType: AiActionType): AiActionPriority {
+function inferQueryPriority(intent: AiBusinessQueryIntent, actionType: AiActionType): AiActionPriority {
   if (intent === 'REFUND_ANALYSIS' || intent === 'KITCHEN_ANALYSIS' || actionType === 'CREATE_CAMPAIGN_DRAFT') return 'HIGH';
   if (intent === 'SALES_ANALYSIS' || intent === 'GENERAL_BUSINESS_SUMMARY') return 'MEDIUM';
   return 'LOW';

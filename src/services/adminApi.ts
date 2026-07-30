@@ -6,6 +6,8 @@ import type {
   AiBossDashboardReport,
   AiBusinessQueryHistoryResponse,
   AiBusinessQueryResponse,
+  AiConversationDetail,
+  AiConversationSummary,
   AiActionItem,
   AiActionListResponse,
   AiActionPriority,
@@ -126,6 +128,7 @@ export async function fetchAiWeeklyInsight(filters: { weekStart?: string; timezo
 
 export async function askAiBusinessQuery(input: {
   question: string;
+  conversationId?: string | null;
   preset?: AiBusinessDailyFilters['preset'];
   from?: string;
   to?: string;
@@ -137,6 +140,16 @@ export async function askAiBusinessQuery(input: {
 
 export async function fetchAiBusinessQueryHistory() {
   const { data } = await apiClient.get<AiBusinessQueryHistoryResponse>('/admin/ai/query-history');
+  return data;
+}
+
+export async function fetchAiConversations() {
+  const { data } = await apiClient.get<{ items: AiConversationSummary[] }>('/admin/ai/conversations');
+  return data;
+}
+
+export async function fetchAiConversation(id: string) {
+  const { data } = await apiClient.get<AiConversationDetail>(`/admin/ai/conversations/${id}`);
   return data;
 }
 

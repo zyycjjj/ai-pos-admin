@@ -614,8 +614,20 @@ export type AiBusinessQueryIntent =
   | 'UNSUPPORTED';
 
 export type AiBusinessQueryResponse = {
+  conversationId: string;
+  messageId: string;
   question: string;
   intent: AiBusinessQueryIntent;
+  resolvedIntent: AiBusinessQueryIntent;
+  isFollowUp: boolean;
+  contextUsed: {
+    previousIntent?: AiBusinessQueryIntent | null;
+    previousRange?: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'custom' } | null;
+    usedPreviousEvidence: boolean;
+    expandedEvidence: boolean;
+    actionCreated?: boolean;
+    campaignDraftCreated?: boolean;
+  };
   range: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'custom' };
   answer: {
     headline: string;
@@ -637,11 +649,42 @@ export type AiBusinessQueryResponse = {
 export type AiBusinessQueryHistoryResponse = {
   items: Array<{
     id: string;
+    conversationId?: string;
     question: string;
     intent: AiBusinessQueryIntent;
     headline: string;
     createdAt: string;
   }>;
+};
+
+export type AiConversationSummary = {
+  id: string;
+  title: string;
+  lastIntent: AiBusinessQueryIntent | null;
+  lastAnswerHeadline: string | null;
+  updatedAt: string;
+};
+
+export type AiConversationMessage = {
+  id: string;
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
+  content: string;
+  question?: string;
+  answer?: AiBusinessQueryResponse['answer'];
+  intent?: AiBusinessQueryIntent;
+  resolvedIntent?: AiBusinessQueryIntent;
+  range?: AiBusinessQueryResponse['range'];
+  evidence?: AiBusinessDailyEvidence[];
+  suggestedActions?: AiBusinessQueryResponse['suggestedActions'];
+  fallback?: boolean;
+  contextUsed?: AiBusinessQueryResponse['contextUsed'];
+  createdAt: string;
+};
+
+export type AiConversationDetail = {
+  id: string;
+  title: string;
+  messages: AiConversationMessage[];
 };
 
 export type AiActionSourceType = 'AI_DAILY' | 'AI_WEEKLY' | 'AI_BOSS_DASHBOARD' | 'AI_ASK' | 'AI_CAMPAIGN_RECOMMENDATION' | 'MANUAL';
