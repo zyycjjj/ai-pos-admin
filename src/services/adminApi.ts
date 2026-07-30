@@ -8,6 +8,9 @@ import type {
   AiBusinessQueryResponse,
   AiConversationDetail,
   AiConversationSummary,
+  AiPlaybookCard,
+  AiPlaybookResult,
+  AiPlaybookRunSummary,
   AiActionItem,
   AiActionListResponse,
   AiActionPriority,
@@ -150,6 +153,26 @@ export async function fetchAiConversations() {
 
 export async function fetchAiConversation(id: string) {
   const { data } = await apiClient.get<AiConversationDetail>(`/admin/ai/conversations/${id}`);
+  return data;
+}
+
+export async function fetchAiPlaybooks() {
+  const { data } = await apiClient.get<{ items: AiPlaybookCard[] }>('/admin/ai/playbooks');
+  return data;
+}
+
+export async function runAiPlaybook(type: string, input: AiBusinessDailyFilters) {
+  const { data } = await apiClient.post<AiPlaybookResult>(`/admin/ai/playbooks/${type}/run`, input);
+  return data;
+}
+
+export async function fetchAiPlaybookRuns() {
+  const { data } = await apiClient.get<{ items: AiPlaybookRunSummary[] }>('/admin/ai/playbook-runs');
+  return data;
+}
+
+export async function fetchAiPlaybookRun(id: string) {
+  const { data } = await apiClient.get<AiPlaybookResult>(`/admin/ai/playbook-runs/${id}`);
   return data;
 }
 

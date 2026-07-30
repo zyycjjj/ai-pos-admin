@@ -687,7 +687,58 @@ export type AiConversationDetail = {
   messages: AiConversationMessage[];
 };
 
-export type AiActionSourceType = 'AI_DAILY' | 'AI_WEEKLY' | 'AI_BOSS_DASHBOARD' | 'AI_ASK' | 'AI_CAMPAIGN_RECOMMENDATION' | 'MANUAL';
+export type AiPlaybookType =
+  | 'REFUND_SPIKE_DIAGNOSIS'
+  | 'SALES_DROP_DIAGNOSIS'
+  | 'KITCHEN_OVERDUE_DIAGNOSIS'
+  | 'DORMANT_CUSTOMER_REACTIVATION'
+  | 'LOW_SELLING_PRODUCT_PROMO'
+  | 'TOP_CUSTOMER_RETENTION';
+
+export type AiPlaybookCard = {
+  type: AiPlaybookType;
+  title: string;
+  description: string;
+  category: 'RISK' | 'SALES' | 'KITCHEN' | 'CUSTOMER' | 'PRODUCT';
+  estimatedMinutes: number;
+  enabled: boolean;
+};
+
+export type AiPlaybookResult = {
+  runId: string;
+  type: AiPlaybookType;
+  title: string;
+  range: { from: string; to: string; timezone: string; preset: 'today' | 'yesterday' | 'last7days' | 'custom' };
+  summary: { headline: string; status: 'GOOD' | 'ATTENTION' | 'RISK' | 'DATA_INSUFFICIENT' };
+  steps: Array<{ id: string; title: string; status: 'PASS' | 'ATTENTION' | 'RISK' | 'DATA_INSUFFICIENT'; finding: string; evidenceIds: string[] }>;
+  findings: Array<{ title: string; text: string; evidenceIds: string[] }>;
+  risks: Array<{ title: string; text: string; evidenceIds: string[] }>;
+  recommendedActions: Array<{
+    kind: 'VIEW_REPORT' | 'VIEW_PRODUCT' | 'VIEW_CUSTOMER' | 'VIEW_CAMPAIGNS' | 'CREATE_CAMPAIGN_DRAFT' | 'VIEW_KITCHEN' | 'VIEW_TABLES' | 'SAVE_ACTION';
+    label: string;
+    priority: AiActionPriority;
+    actionType: AiActionType;
+    targetType: AiActionTargetType;
+    targetUrl?: string;
+    evidenceIds: string[];
+    payload?: Record<string, unknown>;
+  }>;
+  evidence: AiBusinessDailyEvidence[];
+  fallback: boolean;
+  generatedAt: string;
+};
+
+export type AiPlaybookRunSummary = {
+  id: string;
+  type: AiPlaybookType;
+  title: string;
+  range: AiPlaybookResult['range'];
+  summaryHeadline: string;
+  status: AiPlaybookResult['summary']['status'];
+  createdAt: string;
+};
+
+export type AiActionSourceType = 'AI_DAILY' | 'AI_WEEKLY' | 'AI_BOSS_DASHBOARD' | 'AI_ASK' | 'AI_PLAYBOOK' | 'AI_CAMPAIGN_RECOMMENDATION' | 'MANUAL';
 export type AiActionType =
   | 'VIEW_REPORT'
   | 'VIEW_ORDER'

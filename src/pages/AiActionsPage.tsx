@@ -8,7 +8,7 @@ import type { AiActionItem, AiActionPriority, AiActionSourceType, AiActionStatus
 
 const statusOptions: Array<AiActionStatus | ''> = ['', 'OPEN', 'DONE', 'DISMISSED'];
 const priorityOptions: Array<AiActionPriority | ''> = ['', 'HIGH', 'MEDIUM', 'LOW'];
-const sourceOptions: Array<AiActionSourceType | ''> = ['', 'AI_ASK', 'AI_WEEKLY', 'AI_BOSS_DASHBOARD', 'AI_DAILY', 'AI_CAMPAIGN_RECOMMENDATION', 'MANUAL'];
+const sourceOptions: Array<AiActionSourceType | ''> = ['', 'AI_ASK', 'AI_PLAYBOOK', 'AI_WEEKLY', 'AI_BOSS_DASHBOARD', 'AI_DAILY', 'AI_CAMPAIGN_RECOMMENDATION', 'MANUAL'];
 const actionOptions: Array<AiActionType | ''> = ['', 'VIEW_REPORT', 'VIEW_PRODUCT', 'VIEW_CUSTOMER', 'VIEW_CAMPAIGN', 'VIEW_KITCHEN', 'VIEW_TABLE', 'CREATE_CAMPAIGN_DRAFT', 'REVIEW_REFUND', 'REVIEW_DISCOUNT', 'REVIEW_KITCHEN_OVERDUE', 'REVIEW_CUSTOMER_REACTIVATION', 'MANUAL_NOTE'];
 
 export function AiActionsPage() {
